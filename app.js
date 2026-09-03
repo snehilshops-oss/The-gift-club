@@ -1,14 +1,20 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 /* =========================================================
-   THE GIFT CLUB
-   Main application file
+   F·R·I·E·N·D·S
+   =========================================================
+   TEST MODE:
+   true  = Shibam's claiming is temporarily open for testing
+   false = normal 30-day birthday rule
    ========================================================= */
 
-const SUPABASE_URL = "https://pkfdvmvjdcvmmyuhskmg.supabase.co";
+const TEST_MODE = true;
+
+const SUPABASE_URL =
+  "https://pkfdvmvjdcvmmyuhskmg.supabase.co";
 
 const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrZmR2bXZqZGN2bW15dWhza21nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NjA3NDgsImV4cCI6MjEwNDAzNjc0OH0.7gLvkvwxhbuwi_cyIfEUamIRvXsxjP0AQtM8yn0PsxE";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzg4NDYwNzQ4LCJleHAiOjIxMDQwMzY3NDh9.7gLvkvwxhbuw_i_cyIfEUamIRvXsxjP0AQtM8yn0PsxE";
 
 const configured =
   !SUPABASE_URL.includes("PASTE_") &&
@@ -22,8 +28,6 @@ const app = document.querySelector("#app");
 
 /* =========================================================
    PEOPLE
-   Birthday order:
-   Khushi → Snehil → Riya → Shibam
    ========================================================= */
 
 const PEOPLE = [
@@ -61,41 +65,18 @@ const PEOPLE = [
   }
 ];
 
-const monthNames = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December"
-];
-
 /* =========================================================
-   SMALL HELPERS
+   HELPERS
    ========================================================= */
 
 function escapeHtml(value = "") {
-  return String(value).replace(/[&<>"']/g, (character) => {
-    const replacements = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    };
-
-    return replacements[character];
-  });
-}
-
-function escapeAttribute(value = "") {
-  return escapeHtml(value);
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  }[character]));
 }
 
 function formatDate(date) {
@@ -105,10 +86,6 @@ function formatDate(date) {
     year: "numeric"
   });
 }
-
-/* =========================================================
-   BIRTHDAY FUNCTIONS
-   ========================================================= */
 
 function nextBirthday(person) {
   const now = new Date();
@@ -147,6 +124,16 @@ function activeBirthday() {
 }
 
 function isClaimingOpen(person) {
+  /*
+     TEST MODE:
+     Only Shibam gets the temporary testing override.
+     Everyone else still follows the normal 30-day rule.
+  */
+
+  if (TEST_MODE && person.id === "shibam") {
+    return true;
+  }
+
   const birthday = nextBirthday(person);
   const now = new Date();
 
@@ -157,35 +144,51 @@ function isClaimingOpen(person) {
 }
 
 /* =========================================================
-   HOME PAGE
+   HOME
    ========================================================= */
 
 function render() {
   const active = activeBirthday();
-  const orderedPeople = sortedPeopleByBirthday();
+  const people = sortedPeopleByBirthday();
 
   app.innerHTML = `
     <main class="shell">
 
       <header class="hero">
         <div>
+
           <div class="kicker">
-            Four friends · one very long tradition
+            Four friends · ten years · still going
           </div>
 
-          <h1>The Gift Club 🎁</h1>
+          <h1>F·R·I·E·N·D·S</h1>
 
           <p>
-            Because after ten years, “what do you want?”
-            has become a harder question than the birthday itself.
+            A little place for four people to remember
+            what they actually want for their birthdays.
           </p>
+
         </div>
       </header>
+
+      ${
+        TEST_MODE
+          ? `
+            <div class="test-banner">
+              🧪 Test mode is ON · Shibam's gift claiming
+              is temporarily open
+            </div>
+          `
+          : ""
+      }
 
       <section class="next card">
 
         <div>
-          <span class="pill">NEXT BIRTHDAY</span>
+
+          <span class="pill">
+            NEXT BIRTHDAY
+          </span>
 
           <div class="name">
             ${escapeHtml(active.name)}
@@ -194,11 +197,12 @@ function render() {
           <div class="date">
             ${formatDate(nextBirthday(active))}
           </div>
+
         </div>
 
         <button
           class="btn"
-          onclick="openPerson('${escapeAttribute(active.id)}')"
+          onclick="openPerson('${active.id}')"
         >
           Open ${escapeHtml(active.name)}'s wishlist
         </button>
@@ -207,7 +211,7 @@ function render() {
 
       <div class="section-head">
         <div>
-          <h2>The four of us</h2>
+          <h2>The four of us ✨</h2>
           <p>
             Everyone can browse every wishlist, all year.
           </p>
@@ -216,12 +220,19 @@ function render() {
 
       <section class="grid">
 
-        ${orderedPeople
-          .map((person) => {
-            const claimingOpen = isClaimingOpen(person);
+        ${people.map((person) => {
 
-            return `
-              <article class="person card">
+          const claimingOpen =
+            isClaimingOpen(person);
+
+          return `
+            <article class="person card">
+
+              <div class="person-top">
+
+                <div class="avatar">
+                  ${person.name.charAt(0)}
+                </div>
 
                 <div>
                   <div class="kicker">
@@ -237,53 +248,50 @@ function render() {
                   </div>
                 </div>
 
-                <div class="bottom">
+              </div>
 
-                  <span class="pill">
-                    ${
-                      claimingOpen
-                        ? "🎁 Claiming is open"
-                        : "Wishlist open"
-                    }
-                  </span>
+              <div class="bottom">
 
-                  <button
-                    class="btn secondary"
-                    onclick="openPerson('${escapeAttribute(person.id)}')"
-                  >
-                    View wishlist
-                  </button>
+                <span class="pill">
+                  ${
+                    claimingOpen
+                      ? "🎁 Claiming is open"
+                      : "Wishlist open"
+                  }
+                </span>
 
-                </div>
+                <button
+                  class="btn secondary"
+                  onclick="openPerson('${person.id}')"
+                >
+                  View wishlist
+                </button>
 
-              </article>
-            `;
-          })
-          .join("")}
+              </div>
+
+            </article>
+          `;
+        }).join("")}
 
       </section>
 
       <footer>
-        Made for four friends who refuse to let a decade
-        of birthdays defeat them. ❤️
+        Four people. A decade of birthdays. Hopefully
+        slightly fewer “what do you want?” messages. ❤️
       </footer>
 
     </main>
   `;
 }
 
-/*
-  IMPORTANT:
-  The previous version used onclick="render()".
-  Inline onclick handlers need render() to be on window.
-*/
 window.render = render;
 
 /* =========================================================
-   OPEN PERSON
+   WISHLIST
    ========================================================= */
 
 window.openPerson = async function (personId) {
+
   const person = PEOPLE.find(
     (item) => item.id === personId
   );
@@ -299,7 +307,8 @@ window.openPerson = async function (personId) {
     items = await loadItems(personId);
   }
 
-  const claimingOpen = isClaimingOpen(person);
+  const claimingOpen =
+    isClaimingOpen(person);
 
   app.innerHTML = `
     <main class="shell">
@@ -308,12 +317,11 @@ window.openPerson = async function (personId) {
         class="btn ghost"
         onclick="render()"
       >
-        ← Back to The Gift Club
+        ← Back
       </button>
 
       <header
-        class="hero"
-        style="padding-left:0"
+        class="hero wishlist-hero"
       >
 
         <div>
@@ -338,7 +346,7 @@ window.openPerson = async function (personId) {
 
         <button
           class="btn secondary"
-          onclick="showAdd('${escapeAttribute(person.id)}')"
+          onclick="showAdd('${person.id}')"
         >
           + Add gift
         </button>
@@ -352,11 +360,16 @@ window.openPerson = async function (personId) {
             ? items.map(itemCard).join("")
             : `
               <div class="card empty">
-                ${
-                  configured
-                    ? "Nothing here yet. Add the first thing you'd genuinely love to receive. ✨"
-                    : "Finish the one-time Supabase setup first."
-                }
+                <div class="empty-icon">🎁</div>
+
+                <h2>
+                  Nothing here yet
+                </h2>
+
+                <p>
+                  Add something you'd genuinely
+                  love to receive.
+                </p>
               </div>
             `
         }
@@ -372,7 +385,11 @@ window.openPerson = async function (personId) {
    ========================================================= */
 
 async function loadItems(personId) {
-  const { data, error } = await supabase
+
+  const {
+    data,
+    error
+  } = await supabase
     .from("gifts")
     .select("*")
     .eq("person_id", personId)
@@ -381,10 +398,10 @@ async function loadItems(personId) {
     });
 
   if (error) {
-    console.error("Gift loading error:", error);
+    console.error(error);
 
     alert(
-      "I couldn't load this wishlist. Please refresh the page and try again."
+      "I couldn't load this wishlist. Please refresh the page."
     );
 
     return [];
@@ -392,31 +409,28 @@ async function loadItems(personId) {
 
   const gifts = data || [];
 
-  /*
-    The gifts table itself does not contain a claimed column.
-    Claims live in gift_claims.
-
-    We therefore separately retrieve the gift IDs that have
-    already been claimed.
-  */
-
   let claimedIds = new Set();
 
   try {
+
     const {
       data: claims,
-      error: claimsError
+      error: claimError
     } = await supabase
       .from("gift_claims")
       .select("gift_id");
 
-    if (!claimsError && claims) {
+    if (!claimError && claims) {
+
       claimedIds = new Set(
-        claims.map((claim) => claim.gift_id)
+        claims.map(
+          (claim) => claim.gift_id
+        )
       );
     }
+
   } catch (error) {
-    console.error("Claim-status loading error:", error);
+    console.error(error);
   }
 
   return gifts.map((gift) => ({
@@ -430,37 +444,33 @@ async function loadItems(personId) {
    ========================================================= */
 
 function itemCard(item) {
+
   const image =
     item.image_url ||
-    "https://placehold.co/800x700/f0ece5/777?text=🎁+Gift";
-
-  const claimed = Boolean(item.claimed);
+    "https://placehold.co/900x700/f7efe8/777?text=🎁";
 
   return `
     <article class="item card">
 
-      <img
-        src="${escapeAttribute(image)}"
-        alt="${escapeAttribute(item.name || "Gift")}"
-        loading="lazy"
-        onerror="this.onerror=null;this.src='https://placehold.co/800x700/f0ece5/777?text=🎁+Gift';"
-      >
+      <div class="item-image-wrap">
+
+        <img
+          src="${escapeHtml(image)}"
+          alt="${escapeHtml(item.name || "Gift")}"
+          loading="lazy"
+          onerror="
+            this.onerror=null;
+            this.src='https://placehold.co/900x700/f7efe8/777?text=🎁';
+          "
+        >
+
+      </div>
 
       <div class="itembody">
 
         <h3>
           ${escapeHtml(item.name)}
         </h3>
-
-        ${
-          item.price
-            ? `
-              <div class="price">
-                ₹${escapeHtml(String(item.price))}
-              </div>
-            `
-            : ""
-        }
 
         ${
           item.notes
@@ -479,7 +489,7 @@ function itemCard(item) {
               ? `
                 <a
                   class="btn secondary"
-                  href="${escapeAttribute(item.url)}"
+                  href="${escapeHtml(item.url)}"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -490,7 +500,7 @@ function itemCard(item) {
           }
 
           ${
-            claimed
+            item.claimed
               ? `
                 <button
                   class="btn secondary"
@@ -502,7 +512,7 @@ function itemCard(item) {
               : `
                 <button
                   class="btn"
-                  onclick="claimItem('${escapeAttribute(item.id)}')"
+                  onclick="claimItem('${item.id}')"
                 >
                   🎁 Claim
                 </button>
@@ -518,10 +528,119 @@ function itemCard(item) {
 }
 
 /* =========================================================
+   IMAGE COMPRESSION
+   ========================================================= */
+
+function compressImage(file) {
+
+  return new Promise((resolve, reject) => {
+
+    if (!file) {
+      resolve(null);
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      reject(
+        new Error("Please choose an image file.")
+      );
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+
+      const image = new Image();
+
+      image.onload = () => {
+
+        const maxSize = 1000;
+
+        let width = image.width;
+        let height = image.height;
+
+        if (width > maxSize || height > maxSize) {
+
+          if (width > height) {
+            height =
+              Math.round(
+                height * maxSize / width
+              );
+
+            width = maxSize;
+
+          } else {
+
+            width =
+              Math.round(
+                width * maxSize / height
+              );
+
+            height = maxSize;
+          }
+        }
+
+        const canvas =
+          document.createElement("canvas");
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const context =
+          canvas.getContext("2d");
+
+        context.drawImage(
+          image,
+          0,
+          0,
+          width,
+          height
+        );
+
+        /*
+          JPEG compression keeps the database payload
+          much smaller than the original phone photo.
+        */
+
+        const compressed =
+          canvas.toDataURL(
+            "image/jpeg",
+            0.78
+          );
+
+        resolve(compressed);
+      };
+
+      image.onerror = () => {
+        reject(
+          new Error(
+            "The selected image could not be read."
+          )
+        );
+      };
+
+      image.src = event.target.result;
+    };
+
+    reader.onerror = () => {
+      reject(
+        new Error(
+          "The selected image could not be read."
+        )
+      );
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+/* =========================================================
    ADD GIFT
    ========================================================= */
 
 window.showAdd = function (personId) {
+
   app.insertAdjacentHTML(
     "beforeend",
     `
@@ -545,8 +664,8 @@ window.showAdd = function (personId) {
           </h2>
 
           <p>
-            Add something you'd genuinely be happy to receive.
-            Your wishlist can be edited throughout the year.
+            Add something you'd genuinely be
+            happy to receive.
           </p>
 
           <label>
@@ -559,38 +678,6 @@ window.showAdd = function (personId) {
             autocomplete="off"
           >
 
-          <div class="row">
-
-            <div>
-
-              <label>
-                Price
-              </label>
-
-              <input
-                id="gprice"
-                placeholder="2799"
-                inputmode="decimal"
-              >
-
-            </div>
-
-            <div>
-
-              <label>
-                Image URL
-              </label>
-
-              <input
-                id="gimage"
-                placeholder="https://..."
-                inputmode="url"
-              >
-
-            </div>
-
-          </div>
-
           <label>
             Shopping link
           </label>
@@ -599,10 +686,36 @@ window.showAdd = function (personId) {
             id="gurl"
             placeholder="https://..."
             inputmode="url"
+            autocomplete="off"
           >
 
           <label>
-            Notes (optional)
+            Picture
+          </label>
+
+          <div class="upload-box">
+
+            <input
+              id="gimage"
+              type="file"
+              accept="image/*"
+              onchange="previewGiftImage(event)"
+            >
+
+            <div
+              id="image-preview"
+              class="image-preview"
+            >
+              📷
+              <span>
+                Tap to choose a picture
+              </span>
+            </div>
+
+          </div>
+
+          <label>
+            Notes
           </label>
 
           <input
@@ -611,16 +724,17 @@ window.showAdd = function (personId) {
           >
 
           <div class="notice">
-            🔒 The birthday person will never see who claimed
-            their gifts.
+            ✨ Your wishlist can be edited throughout
+            the year.
           </div>
 
           <button
+            id="save-gift-button"
             class="btn"
-            style="width:100%;margin-top:10px"
-            onclick="saveGift('${escapeAttribute(personId)}')"
+            style="width:100%;margin-top:12px"
+            onclick="saveGift('${personId}')"
           >
-            Add to wishlist ✨
+            Add to wishlist
           </button>
 
         </div>
@@ -630,8 +744,48 @@ window.showAdd = function (personId) {
   );
 };
 
+/* =========================================================
+   IMAGE PREVIEW
+   ========================================================= */
+
+window.previewGiftImage = function (event) {
+
+  const file =
+    event.target.files?.[0];
+
+  const preview =
+    document.querySelector(
+      "#image-preview"
+    );
+
+  if (!file || !preview) {
+    return;
+  }
+
+  const reader =
+    new FileReader();
+
+  reader.onload = (e) => {
+
+    preview.innerHTML = `
+      <img
+        src="${e.target.result}"
+        alt="Selected gift"
+      >
+
+      <span>
+        Tap to change picture
+      </span>
+    `;
+  };
+
+  reader.readAsDataURL(file);
+};
+
 window.closeModal = function () {
-  document.querySelector("#modal")?.remove();
+  document
+    .querySelector("#modal")
+    ?.remove();
 };
 
 /* =========================================================
@@ -639,6 +793,7 @@ window.closeModal = function () {
    ========================================================= */
 
 window.saveGift = async function (personId) {
+
   if (!configured) {
     alert(
       "Supabase is not configured yet."
@@ -649,27 +804,28 @@ window.saveGift = async function (personId) {
   const nameInput =
     document.querySelector("#gname");
 
-  const priceInput =
-    document.querySelector("#gprice");
+  const urlInput =
+    document.querySelector("#gurl");
 
   const imageInput =
     document.querySelector("#gimage");
 
-  const urlInput =
-    document.querySelector("#gurl");
-
   const noteInput =
     document.querySelector("#gnote");
 
+  const saveButton =
+    document.querySelector(
+      "#save-gift-button"
+    );
+
   if (
     !nameInput ||
-    !priceInput ||
-    !imageInput ||
     !urlInput ||
+    !imageInput ||
     !noteInput
   ) {
     alert(
-      "The gift form could not be loaded correctly. Please refresh the page."
+      "The gift form didn't load correctly. Please refresh the page."
     );
     return;
   }
@@ -677,63 +833,127 @@ window.saveGift = async function (personId) {
   const name =
     nameInput.value.trim();
 
+  const url =
+    urlInput.value.trim();
+
+  const notes =
+    noteInput.value.trim();
+
   if (!name) {
     alert(
       "Please enter an item name."
     );
+
     nameInput.focus();
+
     return;
   }
 
-  const gift = {
-    person_id: personId,
-    name: name,
-    price:
-      priceInput.value.trim() || null,
-    image_url:
-      imageInput.value.trim() || null,
-    url:
-      urlInput.value.trim() || null,
-    notes:
-      noteInput.value.trim() || null
-  };
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.textContent =
+      "Adding gift…";
+  }
 
-  const { error } = await supabase
-    .from("gifts")
-    .insert(gift);
+  try {
 
-  if (error) {
-    console.error("Gift insert error:", error);
+    let imageUrl = null;
+
+    const file =
+      imageInput.files?.[0];
+
+    if (file) {
+
+      imageUrl =
+        await compressImage(file);
+
+      /*
+        Extremely large compressed images can still be
+        problematic for database rows.
+      */
+
+      if (
+        imageUrl &&
+        imageUrl.length > 1200000
+      ) {
+        alert(
+          "That picture is still too large. Please choose a smaller photo."
+        );
+
+        if (saveButton) {
+          saveButton.disabled = false;
+          saveButton.textContent =
+            "Add to wishlist";
+        }
+
+        return;
+      }
+    }
+
+    const gift = {
+      person_id: personId,
+      name: name,
+      image_url: imageUrl,
+      url: url || null,
+      notes: notes || null
+    };
+
+    const {
+      error
+    } = await supabase
+      .from("gifts")
+      .insert(gift);
+
+    if (error) {
+
+      console.error(
+        "Gift insert error:",
+        error
+      );
+
+      alert(
+        "Couldn't add this gift.\n\n" +
+        error.message
+      );
+
+      return;
+    }
+
+    closeModal();
+
+    await openPerson(personId);
+
+  } catch (error) {
+
+    console.error(error);
 
     alert(
-      "Couldn't add this gift:\n\n" +
-      error.message
+      error.message ||
+      "Something went wrong while adding the gift."
     );
 
-    return;
+  } finally {
+
+    if (saveButton) {
+      saveButton.disabled = false;
+      saveButton.textContent =
+        "Add to wishlist";
+    }
   }
-
-  closeModal();
-
-  await openPerson(personId);
 };
 
 /* =========================================================
-   CLAIM FLOW
+   CLAIM
    ========================================================= */
 
 window.claimItem = async function (giftId) {
+
   if (!configured) {
     alert(
       "Supabase is not configured yet."
     );
     return;
   }
-
-  /*
-    Before opening the login box, check that the gift still exists.
-    This avoids confusing errors if someone deleted it.
-  */
 
   const {
     data: gift,
@@ -751,9 +971,11 @@ window.claimItem = async function (giftId) {
     return;
   }
 
-  const owner = PEOPLE.find(
-    (person) => person.id === gift.person_id
-  );
+  const owner =
+    PEOPLE.find(
+      (person) =>
+        person.id === gift.person_id
+    );
 
   if (!owner) {
     alert(
@@ -769,45 +991,42 @@ window.claimItem = async function (giftId) {
     return;
   }
 
-  /*
-    Check whether it has already been claimed.
-  */
-
   const {
-    data: existingClaim,
-    error: existingClaimError
+    data: existingClaim
   } = await supabase
     .from("gift_claims")
     .select("gift_id")
     .eq("gift_id", giftId)
     .maybeSingle();
 
-  if (
-    !existingClaimError &&
-    existingClaim
-  ) {
+  if (existingClaim) {
+
     alert(
       "That gift has already been claimed. 🎁"
     );
 
-    await openPerson(gift.person_id);
+    await openPerson(
+      gift.person_id
+    );
+
     return;
   }
 
-  await showShopperLogin(
+  showShopperLogin(
     giftId,
     gift.person_id
   );
 };
 
 /* =========================================================
-   SHOPPER LOGIN MODAL
+   SHOPPER LOGIN
    ========================================================= */
 
-async function showShopperLogin(
+function showShopperLogin(
   giftId,
   ownerId
 ) {
+
   app.insertAdjacentHTML(
     "beforeend",
     `
@@ -842,30 +1061,28 @@ async function showShopperLogin(
 
           <select
             id="shopper"
-            style="width:100%;padding:13px;border:1px solid var(--line);border-radius:13px;background:white"
+            style="
+              width:100%;
+              padding:13px;
+              border:1px solid var(--line);
+              border-radius:13px;
+              background:white;
+            "
           >
 
-            ${PEOPLE
-              .map(
-                (person) => `
-                  <option
-                    value="${escapeAttribute(person.id)}"
-                    ${
-                      person.id === ownerId
-                        ? "disabled"
-                        : ""
-                    }
-                  >
-                    ${escapeHtml(person.name)}
-                    ${
-                      person.id === ownerId
-                        ? " — birthday person"
-                        : ""
-                    }
-                  </option>
-                `
-              )
-              .join("")}
+            ${PEOPLE.map((person) => `
+              <option
+                value="${person.id}"
+                ${person.id === ownerId ? "disabled" : ""}
+              >
+                ${escapeHtml(person.name)}
+                ${
+                  person.id === ownerId
+                    ? " — birthday person"
+                    : ""
+                }
+              </option>
+            `).join("")}
 
           </select>
 
@@ -884,7 +1101,7 @@ async function showShopperLogin(
           <button
             class="btn"
             style="width:100%;margin-top:12px"
-            onclick="doClaim('${escapeAttribute(giftId)}')"
+            onclick="doClaim('${giftId}')"
           >
             Claim this gift 🎁
           </button>
@@ -893,8 +1110,8 @@ async function showShopperLogin(
             class="notice"
             style="margin-top:12px"
           >
-            Your name is only used to protect the claim.
-            The birthday person will not see it.
+            🔒 Your claim stays hidden from the
+            birthday person.
           </div>
 
         </div>
@@ -911,10 +1128,11 @@ async function showShopperLogin(
 }
 
 /* =========================================================
-   PERFORM CLAIM
+   DO CLAIM
    ========================================================= */
 
 window.doClaim = async function (giftId) {
+
   const shopperElement =
     document.querySelector("#shopper");
 
@@ -943,12 +1161,14 @@ window.doClaim = async function (giftId) {
     );
 
     passwordElement.focus();
+
     return;
   }
 
   const shopper =
     PEOPLE.find(
-      (person) => person.id === shopperId
+      (person) =>
+        person.id === shopperId
     );
 
   if (!shopper) {
@@ -957,10 +1177,6 @@ window.doClaim = async function (giftId) {
     );
     return;
   }
-
-  /*
-    Never allow the birthday person to claim their own gift.
-  */
 
   const {
     data: gift,
@@ -1008,11 +1224,8 @@ window.doClaim = async function (giftId) {
   }
 
   /*
-    Supabase Auth login.
-    
-    These are the four Auth accounts created for
-    The Gift Club. The PIN/password is the Supabase
-    Auth password for the selected person.
+     Sign in using the selected friend's Supabase
+     account.
   */
 
   const {
@@ -1023,71 +1236,53 @@ window.doClaim = async function (giftId) {
     password: password
   });
 
-  if (authError || !authData?.user) {
+  if (
+    authError ||
+    !authData?.user
+  ) {
+
     console.error(
-      "Supabase authentication error:",
+      "Authentication error:",
       authError
     );
 
     alert(
       "The PIN/password didn't work.\n\n" +
-      "Please check that you selected the correct name and entered the correct PIN/password."
+      "Please check the name and PIN/password and try again."
     );
 
     return;
   }
 
   /*
-    IMPORTANT:
-    Use the authenticated Supabase user's UUID.
-    This is what the gift_claims RLS policy expects.
-  */
-
-  const shopperAuthId =
-    authData.user.id;
-
-  /*
-    Double-check the gift has not been claimed while
-    somebody else was entering their password.
+     Check again immediately before inserting the claim.
   */
 
   const {
-    data: alreadyClaimed,
-    error: claimCheckError
+    data: alreadyClaimed
   } = await supabase
     .from("gift_claims")
     .select("gift_id")
     .eq("gift_id", giftId)
     .maybeSingle();
 
-  if (
-    claimCheckError &&
-    claimCheckError.code !== "PGRST116"
-  ) {
-    console.error(
-      "Claim check error:",
-      claimCheckError
-    );
-
-    alert(
-      "I couldn't check whether this gift was already claimed. Please try again."
-    );
-
-    return;
-  }
-
   if (alreadyClaimed) {
+
     alert(
       "That gift has already been claimed. 🎁"
     );
 
     closeModal();
-    await openPerson(gift.person_id);
+
+    await openPerson(
+      gift.person_id
+    );
+
     return;
   }
 
   /*
-    Create the claim.
+     Save claim.
   */
 
   const {
@@ -1096,44 +1291,28 @@ window.doClaim = async function (giftId) {
     .from("gift_claims")
     .insert({
       gift_id: giftId,
-      shopper_id: shopperAuthId
+      shopper_id: authData.user.id
     });
 
   if (insertError) {
+
     console.error(
-      "Gift claim insert error:",
+      "Claim insert error:",
       insertError
     );
-
-    /*
-      PostgreSQL unique constraint:
-      one claim per gift.
-    */
 
     if (
       insertError.code === "23505"
     ) {
+
       alert(
         "That gift has already been claimed. 🎁"
       );
 
       closeModal();
-      await openPerson(gift.person_id);
-      return;
-    }
 
-    /*
-      RLS failure.
-    */
-
-    if (
-      insertError.code === "42501" ||
-      insertError.message
-        ?.toLowerCase()
-        .includes("row-level security")
-    ) {
-      alert(
-        "Your login worked, but Supabase did not allow the claim to be saved.\n\nPlease contact the Gift Club admin."
+      await openPerson(
+        gift.person_id
       );
 
       return;
@@ -1147,21 +1326,288 @@ window.doClaim = async function (giftId) {
     return;
   }
 
-  /*
-    Success.
-  */
-
   closeModal();
 
   alert(
     "🎉 Claimed!\n\nThe birthday person won't be shown who claimed it."
   );
 
-  await openPerson(gift.person_id);
+  await openPerson(
+    gift.person_id
+  );
 };
 
 /* =========================================================
-   INITIAL PAGE LOAD
+   VISUAL UPGRADE
+   ========================================================= */
+
+const visualUpgrade = document.createElement("style");
+
+visualUpgrade.textContent = `
+
+  :root {
+    --birthday-pink: #f3d7df;
+    --birthday-peach: #f5dfca;
+    --birthday-yellow: #f5e8b7;
+    --birthday-lilac: #ddd7ee;
+    --birthday-green: #dce8d9;
+    --ink: #27231f;
+  }
+
+  body {
+    background:
+      radial-gradient(
+        circle at 10% 5%,
+        rgba(243,215,223,.75),
+        transparent 27%
+      ),
+      radial-gradient(
+        circle at 90% 10%,
+        rgba(245,232,183,.65),
+        transparent 25%
+      ),
+      #faf8f5;
+  }
+
+  .hero {
+    position: relative;
+  }
+
+  .hero::after {
+    content: "✦  ✨  🎂  ✦";
+    display: block;
+    margin-top: 16px;
+    font-size: 18px;
+    letter-spacing: 8px;
+    opacity: .65;
+  }
+
+  .next {
+    background:
+      linear-gradient(
+        135deg,
+        rgba(243,215,223,.75),
+        rgba(245,232,183,.65)
+      );
+    border-color: rgba(150,120,100,.15);
+  }
+
+  .person {
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255,255,255,.98),
+        rgba(250,240,235,.92)
+      );
+  }
+
+  .person:nth-child(2) {
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255,255,255,.98),
+        rgba(238,234,247,.9)
+      );
+  }
+
+  .person:nth-child(3) {
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255,255,255,.98),
+        rgba(237,245,233,.9)
+      );
+  }
+
+  .person:nth-child(4) {
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255,255,255,.98),
+        rgba(247,237,221,.9)
+      );
+  }
+
+  .person-top {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .avatar {
+    width: 54px;
+    height: 54px;
+    min-width: 54px;
+    display: grid;
+    place-items: center;
+    border-radius: 18px;
+    background:
+      linear-gradient(
+        135deg,
+        var(--birthday-pink),
+        var(--birthday-peach)
+      );
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    box-shadow:
+      0 7px 18px rgba(80,60,50,.10);
+  }
+
+  .person:nth-child(2) .avatar {
+    background:
+      linear-gradient(
+        135deg,
+        var(--birthday-lilac),
+        #eee9f5
+      );
+  }
+
+  .person:nth-child(3) .avatar {
+    background:
+      linear-gradient(
+        135deg,
+        var(--birthday-green),
+        #edf4e9
+      );
+  }
+
+  .person:nth-child(4) .avatar {
+    background:
+      linear-gradient(
+        135deg,
+        var(--birthday-yellow),
+        var(--birthday-peach)
+      );
+  }
+
+  .item {
+    overflow: hidden;
+    border: 1px solid rgba(120,100,80,.12);
+  }
+
+  .item-image-wrap {
+    background:
+      linear-gradient(
+        135deg,
+        #f5e9e1,
+        #eee9f3
+      );
+  }
+
+  .item-image-wrap img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1.25;
+    object-fit: cover;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 45px 25px;
+  }
+
+  .empty-icon {
+    font-size: 42px;
+    margin-bottom: 10px;
+  }
+
+  .test-banner {
+    margin: 0 0 18px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    background: #fff2cc;
+    border: 1px solid #ead79b;
+    color: #66551f;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .upload-box {
+    position: relative;
+    margin-bottom: 14px;
+  }
+
+  .upload-box input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .image-preview {
+    min-height: 120px;
+    border: 1.5px dashed #cdbeb2;
+    border-radius: 16px;
+    background:
+      linear-gradient(
+        135deg,
+        #fbf3ee,
+        #f5f1f7
+      );
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    color: #75685f;
+    font-size: 25px;
+  }
+
+  .image-preview span {
+    font-size: 13px;
+  }
+
+  .image-preview img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 14px;
+  }
+
+  .btn {
+    transition:
+      transform .15s ease,
+      box-shadow .15s ease;
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .pill {
+    background: rgba(255,255,255,.72);
+  }
+
+  .notice {
+    background:
+      linear-gradient(
+        135deg,
+        rgba(243,215,223,.5),
+        rgba(221,215,238,.4)
+      );
+  }
+
+  .modalbox {
+    box-shadow:
+      0 24px 70px rgba(45,35,30,.20);
+  }
+
+  footer {
+    opacity: .72;
+  }
+
+`;
+
+document.head.appendChild(
+  visualUpgrade
+);
+
+/* =========================================================
+   START
    ========================================================= */
 
 render();
