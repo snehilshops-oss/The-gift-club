@@ -14,7 +14,7 @@ const SUPABASE_URL =
   "https://pkfdvmvjdcvmmyuhskmg.supabase.co";
 
 const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzg4NDYwNzQ4LCJleHAiOjIxMDQwMzY3NDh9.7gLvkvwxhbuw_i_cyIfEUamIRvXsxjP0AQtM8yn0PsxE";
+  "sb_publishable_6gicMOPUD296szSyxFBm3A_mi_uSfvjP0AQtM8yn0PsxE";
 
 const configured =
   !SUPABASE_URL.includes("PASTE_") &&
