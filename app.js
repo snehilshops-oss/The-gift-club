@@ -165,7 +165,6 @@ function getNextBirthdayPerson() {
    ============================================================ */
 
 async function getCurrentUser() {
-async function getCurrentUser() {
 
   const {
     data: {
@@ -190,7 +189,6 @@ async function getCurrentUser() {
   return data?.user || null;
 
 }
-
 
 function personFromEmail(email) {
 
@@ -1455,102 +1453,8 @@ function renderLogin() {
    LOGIN
    ============================================================ */
 
-window.login = async function() {
 
-  const personId =
-    document
-      .querySelector("#login-person")
-      ?.value;
-
-
-  const password =
-    document
-      .querySelector("#login-password")
-      ?.value;
-
-
-  const button =
-    document
-      .querySelector("#login-button");
-
-
-  const errorBox =
-    document
-      .querySelector("#login-error");
-
-
-  if (!password) {
-
-    errorBox.textContent =
-      "Please enter your password.";
-
-    errorBox.style.display =
-      "block";
-
-    return;
-  }
-
-
-  button.disabled = true;
-
-  button.textContent =
-    "Logging in…";
-
-  errorBox.style.display =
-    "none";
-
-
-  const person =
-    PEOPLE.find(
-      p => p.id === personId
-    );
-
-
-  const {
-    data,
-    error
-  } =
-    await supabase.auth.signInWithPassword({
-
-      email:
-        person.email,
-
-      password:
-        password
-
-    });
-
-
-  if (
-    error ||
-    !data?.user
-  ) {
-
-    console.error(
-      "Login error:",
-      error
-    );
-
-
-    button.disabled = false;
-
-    button.textContent =
-      "Log in";
-
-
-    errorBox.textContent =
-      "The name or password is incorrect.";
-
-    errorBox.style.display =
-      "block";
-
-    return;
-  }
-
-
-  renderHome();
-
-};
+    
 
 
 /* ============================================================
