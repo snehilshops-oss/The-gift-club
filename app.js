@@ -33,28 +33,28 @@ const PEOPLE = [
     name: "Khushi",
     birthday: "27 February",
     emoji: "🎂",
-    email: "khushi@giftclub.local"
+    email: "khushi@giftclub.com"
   },
   {
     id: "snehil",
     name: "Snehil",
     birthday: "27 July",
     emoji: "🎈",
-    email: "snehil@giftclub.local"
+    email: "snehil@giftclub.com"
   },
   {
     id: "riya",
     name: "Riya",
     birthday: "31 August",
     emoji: "🎉",
-    email: "riya@giftclub.local"
+    email: "riya@giftclub.com"
   },
   {
     id: "shibam",
     name: "Shibam",
     birthday: "16 October",
     emoji: "🥳",
-    email: "shibam@giftclub.local"
+    email: "shibam@giftclub.com"
   }
 ];
 
