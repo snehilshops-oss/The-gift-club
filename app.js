@@ -90,7 +90,7 @@ const app = document.querySelector("#app");
 
 
 /* ============================================================
-   BASIC HELPERS
+   HELPERS
    ============================================================ */
 
 function escapeHtml(value = "") {
@@ -101,6 +101,28 @@ function escapeHtml(value = "") {
     '"': "&quot;",
     "'": "&#039;"
   }[character]));
+}
+
+
+function safeUrl(value = "") {
+  const url = String(value).trim();
+
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url);
+
+    if (
+      parsed.protocol !== "http:" &&
+      parsed.protocol !== "https:"
+    ) {
+      return null;
+    }
+
+    return parsed.href;
+  } catch {
+    return null;
+  }
 }
 
 
@@ -177,30 +199,35 @@ function installStyles() {
   style.textContent = `
 
     :root {
-      --bg: #f4f6fa;
+      --bg: #f4f5f7;
       --card: #ffffff;
-      --text: #182235;
-      --muted: #69758a;
-      --line: #e3e7ef;
+      --text: #172033;
+      --muted: #697386;
+      --line: #e1e5eb;
 
-      --blue: #4676e8;
-      --blue-dark: #315ec7;
+      --blue: #3867d6;
+      --blue-dark: #2852b4;
 
-      --yellow: #f7c948;
-      --orange: #f29a4a;
-      --green: #45ad7b;
-      --purple: #8067d9;
-      --red: #df6262;
+      --yellow: #f4c542;
+      --orange: #ef9145;
+      --green: #3ea875;
+      --purple: #735bc7;
+      --red: #d95757;
 
       --shadow:
-        0 10px 32px rgba(25, 38, 65, .08);
+        0 10px 30px rgba(20, 30, 50, .08);
 
-      --radius: 20px;
+      --radius: 18px;
     }
 
 
     * {
       box-sizing: border-box;
+    }
+
+
+    html {
+      background: var(--bg);
     }
 
 
@@ -220,19 +247,14 @@ function installStyles() {
       color: var(--text);
 
       background:
-        radial-gradient(
-          circle at 5% 0%,
-          rgba(70,118,232,.10),
-          transparent 27%
-        ),
+        linear-gradient(
+          135deg,
+          #f4f5f7 0%,
+          #eef3fb 50%,
+          #faf6e8 100%
+        );
 
-        radial-gradient(
-          circle at 95% 5%,
-          rgba(247,201,72,.13),
-          transparent 25%
-        ),
-
-        var(--bg);
+      min-height: 100vh;
     }
 
 
@@ -250,10 +272,11 @@ function installStyles() {
 
 
     .shell {
-      width: min(
-        1080px,
-        calc(100% - 28px)
-      );
+      width:
+        min(
+          1080px,
+          calc(100% - 28px)
+        );
 
       margin: auto;
 
@@ -270,47 +293,73 @@ function installStyles() {
 
     .hero {
       position: relative;
+
       overflow: hidden;
 
       padding: 38px;
 
       margin-bottom: 22px;
 
-      border-radius: 28px;
+      border-radius: 26px;
 
       background:
         linear-gradient(
           135deg,
           #ffffff 0%,
-          #f1f5ff 55%,
-          #fff9df 100%
+          #edf3ff 48%,
+          #fff7d9 100%
         );
 
-      border: 1px solid #edf0f5;
+      border:
+        1px solid
+        #e4e8ef;
 
-      box-shadow: var(--shadow);
+      box-shadow:
+        var(--shadow);
+    }
+
+
+    .hero::before {
+      content: "";
+
+      position: absolute;
+
+      width: 150px;
+      height: 150px;
+
+      right: -45px;
+      bottom: -65px;
+
+      border-radius: 50%;
+
+      background:
+        rgba(239,145,69,.18);
     }
 
 
     .hero::after {
       content:
-        "✦   🎈   ✦   🎁";
+        "✦   🎈   🎁   ✦";
 
       position: absolute;
 
       right: 28px;
-      top: 25px;
+      top: 24px;
 
-      font-size: 25px;
+      font-size: 23px;
 
-      opacity: .55;
+      opacity: .65;
 
-      letter-spacing: 7px;
+      letter-spacing: 5px;
     }
 
 
     .brand {
-      color: var(--blue);
+      position: relative;
+      z-index: 1;
+
+      color:
+        var(--blue);
 
       font-size: 13px;
 
@@ -323,6 +372,9 @@ function installStyles() {
 
 
     h1 {
+      position: relative;
+      z-index: 1;
+
       margin:
         11px
         0
@@ -342,11 +394,15 @@ function installStyles() {
 
 
     .hero p {
+      position: relative;
+      z-index: 1;
+
       max-width: 690px;
 
       margin: 0;
 
-      color: var(--muted);
+      color:
+        var(--muted);
 
       font-size: 16px;
 
@@ -359,7 +415,8 @@ function installStyles() {
        ========================= */
 
     .card {
-      background: var(--card);
+      background:
+        var(--card);
 
       border:
         1px solid
@@ -382,16 +439,19 @@ function installStyles() {
 
       align-items: center;
 
-      justify-content: space-between;
+      justify-content:
+        space-between;
 
       gap: 20px;
 
-      padding: 25px 28px;
+      padding:
+        25px
+        28px;
 
       margin-bottom: 40px;
 
       border-top:
-        4px solid
+        5px solid
         var(--yellow);
     }
 
@@ -434,7 +494,8 @@ function installStyles() {
     .date {
       margin-top: 4px;
 
-      color: var(--muted);
+      color:
+        var(--muted);
 
       font-weight: 600;
     }
@@ -462,7 +523,8 @@ function installStyles() {
     .section-head p {
       margin: 0;
 
-      color: var(--muted);
+      color:
+        var(--muted);
     }
 
 
@@ -530,7 +592,8 @@ function installStyles() {
 
 
     .person-label {
-      color: var(--muted);
+      color:
+        var(--muted);
 
       font-size: 12px;
 
@@ -555,7 +618,8 @@ function installStyles() {
 
 
     .person-birthday {
-      color: var(--muted);
+      color:
+        var(--muted);
 
       font-weight: 650;
     }
@@ -647,6 +711,12 @@ function installStyles() {
     }
 
 
+    .btn.ghost:hover {
+      background:
+        #ffffff;
+    }
+
+
     .btn.danger {
       background:
         #fff0f0;
@@ -679,7 +749,7 @@ function installStyles() {
 
 
     /* =========================
-       WISHLIST HEADER
+       WISHLIST NAV
        ========================= */
 
     .wishlist-nav {
@@ -730,8 +800,8 @@ function installStyles() {
       background:
         linear-gradient(
           135deg,
-          #eaf0ff,
-          #fff3c5
+          #e8efff,
+          #fff2bd
         );
     }
 
@@ -750,8 +820,8 @@ function installStyles() {
       background:
         linear-gradient(
           135deg,
-          #edf2ff,
-          #fff4cf
+          #e8efff,
+          #fff2bd
         );
 
       font-size: 55px;
@@ -775,7 +845,8 @@ function installStyles() {
     .gift-notes {
       margin-top: 10px;
 
-      color: var(--muted);
+      color:
+        var(--muted);
 
       line-height: 1.55;
 
@@ -831,7 +902,8 @@ function installStyles() {
 
       text-align: center;
 
-      color: var(--muted);
+      color:
+        var(--muted);
     }
 
 
@@ -870,7 +942,7 @@ function installStyles() {
         );
 
       backdrop-filter:
-        blur(8px);
+        blur(7px);
     }
 
 
@@ -906,7 +978,8 @@ function installStyles() {
 
 
     .modal-box > p {
-      color: var(--muted);
+      color:
+        var(--muted);
 
       line-height: 1.55;
     }
@@ -957,9 +1030,9 @@ function installStyles() {
       box-shadow:
         0 0 0 3px
         rgba(
-          70,
-          118,
-          232,
+          56,
+          103,
+          214,
           .12
         );
     }
@@ -1138,7 +1211,6 @@ function renderHome() {
 
   const people =
     orderedPeople();
-
 
   app.innerHTML = `
 
@@ -1349,7 +1421,6 @@ async function loadWishlist(personId) {
           item.gift_id === gift.id
       ) || null;
 
-
     return {
       ...gift,
       claim
@@ -1405,9 +1476,7 @@ window.openPerson = async function(personId) {
       <header class="hero">
 
         <div class="brand">
-          ${escapeHtml(
-            person.birthday
-          )}
+          ${escapeHtml(person.birthday)}
         </div>
 
         <h1>
@@ -1428,7 +1497,10 @@ window.openPerson = async function(personId) {
         class="gift-grid"
       >
 
-        <div class="card empty">
+        <div
+          class="card empty"
+          style="grid-column:1/-1"
+        >
 
           <div class="empty-icon">
             ⏳
@@ -1457,6 +1529,11 @@ window.openPerson = async function(personId) {
       document.querySelector(
         "#wishlist"
       );
+
+
+    if (!container) {
+      return;
+    }
 
 
     if (!gifts.length) {
@@ -1565,14 +1642,10 @@ window.openPerson = async function(personId) {
    GIFT CARD
    ============================================================ */
 
-function renderGiftCard(
-  gift,
-  owner
-) {
+function renderGiftCard(gift, owner) {
 
   const image =
-    gift.image_url &&
-    String(gift.image_url).trim();
+    safeUrl(gift.image_url || "");
 
 
   const imageHtml = image
@@ -1581,12 +1654,8 @@ function renderGiftCard(
 
       <img
         class="gift-image"
-        src="${escapeHtml(
-          image
-        )}"
-        alt="${escapeHtml(
-          gift.name
-        )}"
+        src="${escapeHtml(image)}"
+        alt="${escapeHtml(gift.name)}"
         loading="lazy"
         onerror="
           this.style.display='none';
@@ -1626,11 +1695,7 @@ function renderGiftCard(
       <div class="gift-body">
 
         <h3 class="gift-title">
-
-          ${escapeHtml(
-            gift.name
-          )}
-
+          ${escapeHtml(gift.name)}
         </h3>
 
 
@@ -1638,9 +1703,7 @@ function renderGiftCard(
           gift.notes
             ? `
               <div class="gift-notes">
-                ${escapeHtml(
-                  gift.notes
-                )}
+                ${escapeHtml(gift.notes)}
               </div>
             `
             : ""
@@ -1655,7 +1718,7 @@ function renderGiftCard(
                 <a
                   class="btn secondary"
                   href="${escapeHtml(
-                    gift.url
+                    safeUrl(gift.url) || "#"
                   )}"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -1776,6 +1839,14 @@ window.showAdd = function(personId) {
             for="gift-url"
           >
             Shopping link
+            <span
+              style="
+                font-weight:500;
+                color:#8791a2
+              "
+            >
+              (optional)
+            </span>
           </label>
 
           <input
@@ -1789,29 +1860,15 @@ window.showAdd = function(personId) {
 
           <label
             class="field-label"
-            for="gift-image"
-          >
-            Picture URL
-            <span style="font-weight:500;color:#8791a2">
-              (optional)
-            </span>
-          </label>
-
-          <input
-            id="gift-image"
-            class="field"
-            type="url"
-            placeholder="Optional image URL"
-            autocomplete="off"
-          >
-
-
-          <label
-            class="field-label"
             for="gift-notes"
           >
             Notes
-            <span style="font-weight:500;color:#8791a2">
+            <span
+              style="
+                font-weight:500;
+                color:#8791a2
+              "
+            >
               (optional)
             </span>
           </label>
@@ -1825,9 +1882,9 @@ window.showAdd = function(personId) {
 
           <div class="notice">
 
-            💡 You can add gifts anytime.
-            Claiming is available throughout
-            the entire year.
+            💡 You can add gifts throughout
+            the year. There is no 30-day
+            restriction.
 
           </div>
 
@@ -1875,16 +1932,9 @@ window.saveGift = async function(personId) {
       .trim();
 
 
-  const url =
+  const urlInput =
     document
       .querySelector("#gift-url")
-      ?.value
-      .trim();
-
-
-  const image =
-    document
-      .querySelector("#gift-image")
       ?.value
       .trim();
 
@@ -1906,29 +1956,22 @@ window.saveGift = async function(personId) {
   }
 
 
-  if (
-    url &&
-    !/^https?:\\/\\//i.test(url)
-  ) {
+  let url = null;
 
-    alert(
-      "The shopping link should start with https://"
-    );
+  if (urlInput) {
 
-    return;
-  }
+    url =
+      safeUrl(urlInput);
 
+    if (!url) {
 
-  if (
-    image &&
-    !/^https?:\\/\\//i.test(image)
-  ) {
+      alert(
+        "The shopping link should start with https:// or http://"
+      );
 
-    alert(
-      "The image link should start with https://"
-    );
+      return;
+    }
 
-    return;
   }
 
 
@@ -1957,10 +2000,7 @@ window.saveGift = async function(personId) {
       name,
 
     url:
-      url || null,
-
-    image_url:
-      image || null,
+      url,
 
     notes:
       notes || null
@@ -2092,7 +2132,6 @@ window.claimItem = async function(giftId) {
             id="claim-password"
             class="field"
             type="password"
-            inputmode="numeric"
             autocomplete="current-password"
             placeholder="Enter your PIN/password"
           >
@@ -2327,8 +2366,8 @@ window.doClaim = async function(giftId) {
 
 
   /*
-    CLAIM — NO DATE RESTRICTION.
-    THIS WORKS ALL YEAR.
+    CLAIM — AVAILABLE ALL YEAR.
+    NO DATE CHECK.
   */
 
   const {
@@ -2399,10 +2438,6 @@ window.doClaim = async function(giftId) {
 
 window.unclaimItem = async function(giftId) {
 
-  /*
-    Get the currently signed-in person.
-  */
-
   const {
     data: {
       user
@@ -2413,11 +2448,6 @@ window.unclaimItem = async function(giftId) {
 
   if (!user) {
 
-    /*
-      If the session disappeared,
-      ask them to sign in again.
-    */
-
     alert(
       "Please claim the gift again after signing in."
     );
@@ -2427,8 +2457,8 @@ window.unclaimItem = async function(giftId) {
 
 
   /*
-    Find the claim belonging to
-    THIS signed-in user.
+    Find ONLY the claim belonging
+    to the currently signed-in user.
   */
 
   const {
@@ -2468,9 +2498,8 @@ window.unclaimItem = async function(giftId) {
 
 
   /*
-    Someone else claimed it.
-    Do NOT allow this person to
-    remove somebody else's claim.
+    Prevent somebody from
+    removing another person's claim.
   */
 
   if (!ownClaim) {
@@ -2494,10 +2523,6 @@ window.unclaimItem = async function(giftId) {
     return;
   }
 
-
-  /*
-    DELETE ONLY THIS USER'S CLAIM.
-  */
 
   const {
     error: deleteError
@@ -2531,10 +2556,6 @@ window.unclaimItem = async function(giftId) {
     return;
   }
 
-
-  /*
-    Find owner and reload.
-  */
 
   const {
     data: gift
@@ -2573,9 +2594,55 @@ window.unclaimItem = async function(giftId) {
 
 
 /* ============================================================
-   START
+   START APP
    ============================================================ */
 
-installStyles();
+try {
 
-renderHome();
+  installStyles();
+
+  renderHome();
+
+} catch (error) {
+
+  console.error(
+    "Application startup error:",
+    error
+  );
+
+  app.innerHTML = `
+
+    <main
+      style="
+        max-width:700px;
+        margin:60px auto;
+        padding:30px;
+        font-family:Arial,sans-serif;
+      "
+    >
+
+      <h1>
+        Something went wrong
+      </h1>
+
+      <p>
+        The application could not start.
+      </p>
+
+      <pre
+        style="
+          white-space:pre-wrap;
+          background:#f4f4f4;
+          padding:20px;
+          border-radius:12px;
+        "
+      >${escapeHtml(
+        error.message ||
+        String(error)
+      )}</pre>
+
+    </main>
+
+  `;
+
+     }
