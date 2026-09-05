@@ -165,14 +165,25 @@ function getNextBirthdayPerson() {
    ============================================================ */
 
 async function getCurrentUser() {
+async function getCurrentUser() {
+
+  const {
+    data: {
+      user
+    }
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    return user;
+  }
 
   const {
     data,
     error
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.signInAnonymously();
 
   if (error) {
-    console.error(error);
+    console.error("Anonymous login error:", error);
     return null;
   }
 
