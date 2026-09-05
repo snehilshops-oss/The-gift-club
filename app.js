@@ -32,25 +32,29 @@ const PEOPLE = [
     id: "khushi",
     name: "Khushi",
     birthday: "27 February",
-    emoji: "🎂"
+    emoji: "🎂",
+    email: "khushi@giftclub.local"
   },
   {
     id: "snehil",
     name: "Snehil",
     birthday: "27 July",
-    emoji: "🎈"
+    emoji: "🎈",
+    email: "snehil@giftclub.local"
   },
   {
     id: "riya",
     name: "Riya",
     birthday: "31 August",
-    emoji: "🎉"
+    emoji: "🎉",
+    email: "riya@giftclub.local"
   },
   {
     id: "shibam",
     name: "Shibam",
     birthday: "16 October",
-    emoji: "🥳"
+    emoji: "🥳",
+    email: "shibam@giftclub.local"
   }
 ];
 
@@ -68,18 +72,6 @@ const MONTHS = [
   "November",
   "December"
 ];
-
-
-/* ============================================================
-   AUTH EMAILS
-   ============================================================ */
-
-const AUTH_EMAILS = {
-  snehil: "snehil@giftclub.local",
-  khushi: "khushi@giftclub.local",
-  riya: "riya@giftclub.local",
-  shibam: "shibam@giftclub.local"
-};
 
 
 /* ============================================================
@@ -104,41 +96,18 @@ function escapeHtml(value = "") {
 }
 
 
-function safeUrl(value = "") {
-  const url = String(value).trim();
-
-  if (!url) return null;
-
-  try {
-    const parsed = new URL(url);
-
-    if (
-      parsed.protocol !== "http:" &&
-      parsed.protocol !== "https:"
-    ) {
-      return null;
-    }
-
-    return parsed.href;
-  } catch {
-    return null;
-  }
-}
-
-
 function nextBirthday(person) {
+
   const now = new Date();
 
   const parts = person.birthday.split(" ");
 
   const day = Number(parts[0]);
-
-  const monthIndex =
-    MONTHS.indexOf(parts[1]);
+  const month = MONTHS.indexOf(parts[1]);
 
   let date = new Date(
     now.getFullYear(),
-    monthIndex,
+    month,
     day
   );
 
@@ -151,7 +120,7 @@ function nextBirthday(person) {
   if (date < today) {
     date = new Date(
       now.getFullYear() + 1,
-      monthIndex,
+      month,
       day
     );
   }
@@ -161,24 +130,64 @@ function nextBirthday(person) {
 
 
 function formatBirthday(date) {
-  return date.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  });
+
+  return date.toLocaleDateString(
+    "en-IN",
+    {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    }
+  );
+
 }
 
 
 function orderedPeople() {
+
   return [...PEOPLE].sort(
     (a, b) =>
       nextBirthday(a) - nextBirthday(b)
   );
+
 }
 
 
 function getNextBirthdayPerson() {
+
   return orderedPeople()[0];
+
+}
+
+
+/* ============================================================
+   CURRENT USER
+   ============================================================ */
+
+async function getCurrentUser() {
+
+  const {
+    data,
+    error
+  } = await supabase.auth.getUser();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data?.user || null;
+
+}
+
+
+function personFromEmail(email) {
+
+  return PEOPLE.find(
+    person =>
+      person.email === email
+  );
+
 }
 
 
@@ -188,34 +197,59 @@ function getNextBirthdayPerson() {
 
 function installStyles() {
 
-  if (document.querySelector("#friends-styles")) {
+  if (
+    document.querySelector(
+      "#friends-styles"
+    )
+  ) {
     return;
   }
 
-  const style = document.createElement("style");
 
-  style.id = "friends-styles";
+  const style =
+    document.createElement("style");
+
+
+  style.id =
+    "friends-styles";
+
 
   style.textContent = `
 
-    :root {
-      --bg: #f4f5f7;
-      --card: #ffffff;
-      --text: #172033;
-      --muted: #697386;
-      --line: #e1e5eb;
+    @import url(
+      'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'
+    );
 
-      --blue: #3867d6;
-      --blue-dark: #2852b4;
+
+    :root {
+
+      --bg: #f5f7fb;
+
+      --card: #ffffff;
+
+      --text: #172033;
+
+      --muted: #69758a;
+
+      --line: #e2e7f0;
+
+      --blue: #4169e1;
+
+      --blue-dark: #3155bd;
 
       --yellow: #f4c542;
-      --orange: #ef9145;
-      --green: #3ea875;
-      --purple: #735bc7;
+
+      --orange: #ee8b3a;
+
+      --green: #3ca776;
+
+      --purple: #7659cf;
+
       --red: #d95757;
 
       --shadow:
-        0 10px 30px rgba(20, 30, 50, .08);
+        0 8px 28px
+        rgba(25, 38, 65, .08);
 
       --radius: 18px;
     }
@@ -226,35 +260,34 @@ function installStyles() {
     }
 
 
-    html {
-      background: var(--bg);
-    }
-
-
     body {
+
       margin: 0;
 
       font-family:
-        Inter,
+        "Inter",
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
-        Roboto,
-        Helvetica,
-        Arial,
         sans-serif;
 
       color: var(--text);
 
       background:
-        linear-gradient(
-          135deg,
-          #f4f5f7 0%,
-          #eef3fb 50%,
-          #faf6e8 100%
-        );
 
-      min-height: 100vh;
+        radial-gradient(
+          circle at 5% 0%,
+          rgba(65,105,225,.10),
+          transparent 25%
+        ),
+
+        radial-gradient(
+          circle at 95% 5%,
+          rgba(244,197,66,.12),
+          transparent 23%
+        ),
+
+        var(--bg);
     }
 
 
@@ -266,12 +299,15 @@ function installStyles() {
     }
 
 
+    button,
     a {
-      text-decoration: none;
+      -webkit-tap-highlight-color:
+        transparent;
     }
 
 
     .shell {
+
       width:
         min(
           1080px,
@@ -281,142 +317,13 @@ function installStyles() {
       margin: auto;
 
       padding:
-        22px
-        0
-        55px;
+        22px 0 55px;
     }
 
-
-    /* =========================
-       HERO
-       ========================= */
-
-    .hero {
-      position: relative;
-
-      overflow: hidden;
-
-      padding: 38px;
-
-      margin-bottom: 22px;
-
-      border-radius: 26px;
-
-      background:
-        linear-gradient(
-          135deg,
-          #ffffff 0%,
-          #edf3ff 48%,
-          #fff7d9 100%
-        );
-
-      border:
-        1px solid
-        #e4e8ef;
-
-      box-shadow:
-        var(--shadow);
-    }
-
-
-    .hero::before {
-      content: "";
-
-      position: absolute;
-
-      width: 150px;
-      height: 150px;
-
-      right: -45px;
-      bottom: -65px;
-
-      border-radius: 50%;
-
-      background:
-        rgba(239,145,69,.18);
-    }
-
-
-    .hero::after {
-      content:
-        "✦   🎈   🎁   ✦";
-
-      position: absolute;
-
-      right: 28px;
-      top: 24px;
-
-      font-size: 23px;
-
-      opacity: .65;
-
-      letter-spacing: 5px;
-    }
-
-
-    .brand {
-      position: relative;
-      z-index: 1;
-
-      color:
-        var(--blue);
-
-      font-size: 13px;
-
-      font-weight: 900;
-
-      letter-spacing: 4px;
-
-      text-transform: uppercase;
-    }
-
-
-    h1 {
-      position: relative;
-      z-index: 1;
-
-      margin:
-        11px
-        0
-        12px;
-
-      font-size:
-        clamp(
-          42px,
-          7vw,
-          68px
-        );
-
-      line-height: .95;
-
-      letter-spacing: -3px;
-    }
-
-
-    .hero p {
-      position: relative;
-      z-index: 1;
-
-      max-width: 690px;
-
-      margin: 0;
-
-      color:
-        var(--muted);
-
-      font-size: 16px;
-
-      line-height: 1.65;
-    }
-
-
-    /* =========================
-       CARDS
-       ========================= */
 
     .card {
-      background:
-        var(--card);
+
+      background: var(--card);
 
       border:
         1px solid
@@ -430,11 +337,157 @@ function installStyles() {
     }
 
 
-    /* =========================
-       NEXT BIRTHDAY
-       ========================= */
+    /* HERO */
+
+    .hero {
+
+      position: relative;
+
+      overflow: hidden;
+
+      padding: 38px;
+
+      margin-bottom: 22px;
+
+      border-radius: 26px;
+
+      background:
+
+        linear-gradient(
+          135deg,
+          #ffffff 0%,
+          #f1f5ff 55%,
+          #fff8dc 100%
+        );
+
+      border:
+        1px solid
+        #edf0f5;
+
+      box-shadow:
+        var(--shadow);
+    }
+
+
+    .hero::after {
+
+      content:
+        "✦  🎈  ✦  🎁";
+
+      position: absolute;
+
+      right: 28px;
+
+      top: 26px;
+
+      font-size: 25px;
+
+      opacity: .55;
+
+      letter-spacing: 5px;
+    }
+
+
+    .brand {
+
+      color: var(--blue);
+
+      font-size: 12px;
+
+      font-weight: 800;
+
+      letter-spacing: 3px;
+
+      text-transform: uppercase;
+    }
+
+
+    h1 {
+
+      margin:
+        10px 0 12px;
+
+      font-size:
+        clamp(
+          42px,
+          7vw,
+          66px
+        );
+
+      line-height: .96;
+
+      letter-spacing: -3px;
+
+      font-weight: 800;
+    }
+
+
+    .hero p {
+
+      max-width: 690px;
+
+      margin: 0;
+
+      color: var(--muted);
+
+      font-size: 16px;
+
+      line-height: 1.65;
+    }
+
+
+    /* USER BAR */
+
+    .userbar {
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content:
+        space-between;
+
+      gap: 12px;
+
+      margin-bottom: 18px;
+
+      padding:
+        12px 15px;
+
+      background:
+        rgba(255,255,255,.82);
+
+      border:
+        1px solid
+        var(--line);
+
+      border-radius:
+        14px;
+    }
+
+
+    .user-info {
+
+      color: var(--muted);
+
+      font-size: 13px;
+
+      font-weight: 600;
+    }
+
+
+    .user-info strong {
+
+      color: var(--text);
+
+      font-weight: 800;
+    }
+
+
+    /* NEXT BIRTHDAY */
 
     .next {
+
       display: flex;
 
       align-items: center;
@@ -445,23 +498,22 @@ function installStyles() {
       gap: 20px;
 
       padding:
-        25px
-        28px;
+        25px 28px;
 
       margin-bottom: 40px;
 
       border-top:
-        5px solid
+        4px solid
         var(--yellow);
     }
 
 
     .pill {
+
       display: inline-flex;
 
       padding:
-        7px
-        11px;
+        7px 11px;
 
       border-radius:
         999px;
@@ -474,7 +526,7 @@ function installStyles() {
 
       font-size: 10px;
 
-      font-weight: 900;
+      font-weight: 800;
 
       letter-spacing: 1px;
 
@@ -483,62 +535,62 @@ function installStyles() {
 
 
     .next-name {
+
       margin-top: 9px;
 
       font-size: 30px;
 
-      font-weight: 850;
+      font-weight: 800;
     }
 
 
     .date {
+
       margin-top: 4px;
 
-      color:
-        var(--muted);
+      color: var(--muted);
 
       font-weight: 600;
     }
 
 
-    /* =========================
-       SECTION
-       ========================= */
+    /* SECTION */
 
     .section-head {
+
       margin-bottom: 17px;
     }
 
 
     .section-head h2 {
-      margin:
-        0
-        0
-        5px;
 
-      font-size: 28px;
+      margin:
+        0 0 5px;
+
+      font-size: 27px;
+
+      font-weight: 800;
     }
 
 
     .section-head p {
+
       margin: 0;
 
-      color:
-        var(--muted);
+      color: var(--muted);
     }
 
 
-    /* =========================
-       PEOPLE
-       ========================= */
+    /* PEOPLE */
 
     .people-grid {
+
       display: grid;
 
       grid-template-columns:
         repeat(
           2,
-          minmax(0, 1fr)
+          minmax(0,1fr)
         );
 
       gap: 18px;
@@ -546,6 +598,7 @@ function installStyles() {
 
 
     .person {
+
       min-height: 205px;
 
       padding: 24px;
@@ -564,6 +617,7 @@ function installStyles() {
 
 
     .person:nth-child(1) {
+
       border-top:
         5px solid
         var(--purple);
@@ -571,6 +625,7 @@ function installStyles() {
 
 
     .person:nth-child(2) {
+
       border-top:
         5px solid
         var(--blue);
@@ -578,6 +633,7 @@ function installStyles() {
 
 
     .person:nth-child(3) {
+
       border-top:
         5px solid
         var(--green);
@@ -585,6 +641,7 @@ function installStyles() {
 
 
     .person:nth-child(4) {
+
       border-top:
         5px solid
         var(--orange);
@@ -592,10 +649,10 @@ function installStyles() {
 
 
     .person-label {
-      color:
-        var(--muted);
 
-      font-size: 12px;
+      color: var(--muted);
+
+      font-size: 11px;
 
       font-weight: 800;
 
@@ -606,26 +663,28 @@ function installStyles() {
 
 
     .person h2 {
-      margin:
-        7px
-        0
-        5px;
 
-      font-size: 31px;
+      margin:
+        7px 0 5px;
+
+      font-size: 30px;
 
       letter-spacing: -1px;
+
+      font-weight: 800;
     }
 
 
     .person-birthday {
-      color:
-        var(--muted);
 
-      font-weight: 650;
+      color: var(--muted);
+
+      font-weight: 600;
     }
 
 
     .person-bottom {
+
       display: flex;
 
       align-items: center;
@@ -639,11 +698,10 @@ function installStyles() {
     }
 
 
-    /* =========================
-       BUTTONS
-       ========================= */
+    /* BUTTONS */
 
     .btn {
+
       display: inline-flex;
 
       align-items: center;
@@ -653,19 +711,18 @@ function installStyles() {
       min-height: 43px;
 
       padding:
-        11px
-        16px;
+        11px 16px;
 
       border: 0;
 
-      border-radius: 12px;
+      border-radius: 11px;
 
       background:
         var(--blue);
 
-      color: #fff;
+      color: white;
 
-      font-weight: 800;
+      font-weight: 750;
 
       cursor: pointer;
 
@@ -675,6 +732,7 @@ function installStyles() {
 
 
     .btn:hover {
+
       background:
         var(--blue-dark);
 
@@ -684,6 +742,7 @@ function installStyles() {
 
 
     .btn.secondary {
+
       background:
         #edf1f7;
 
@@ -693,12 +752,14 @@ function installStyles() {
 
 
     .btn.secondary:hover {
+
       background:
         #e0e6ef;
     }
 
 
     .btn.ghost {
+
       background:
         transparent;
 
@@ -711,13 +772,8 @@ function installStyles() {
     }
 
 
-    .btn.ghost:hover {
-      background:
-        #ffffff;
-    }
-
-
     .btn.danger {
+
       background:
         #fff0f0;
 
@@ -731,6 +787,7 @@ function installStyles() {
 
 
     .btn.danger:hover {
+
       background:
         #ffe3e3;
 
@@ -739,7 +796,8 @@ function installStyles() {
 
 
     .btn:disabled {
-      opacity: .65;
+
+      opacity: .6;
 
       cursor:
         not-allowed;
@@ -748,11 +806,10 @@ function installStyles() {
     }
 
 
-    /* =========================
-       WISHLIST NAV
-       ========================= */
+    /* WISHLIST NAV */
 
     .wishlist-nav {
+
       display: flex;
 
       justify-content:
@@ -766,17 +823,16 @@ function installStyles() {
     }
 
 
-    /* =========================
-       GIFTS
-       ========================= */
+    /* GIFTS */
 
     .gift-grid {
+
       display: grid;
 
       grid-template-columns:
         repeat(
           2,
-          minmax(0, 1fr)
+          minmax(0,1fr)
         );
 
       gap: 20px;
@@ -784,11 +840,13 @@ function installStyles() {
 
 
     .gift {
+
       overflow: hidden;
     }
 
 
     .gift-image {
+
       width: 100%;
 
       height: 245px;
@@ -798,15 +856,12 @@ function installStyles() {
       object-fit: cover;
 
       background:
-        linear-gradient(
-          135deg,
-          #e8efff,
-          #fff2bd
-        );
+        #eef2f8;
     }
 
 
     .gift-placeholder {
+
       width: 100%;
 
       height: 245px;
@@ -818,35 +873,40 @@ function installStyles() {
       justify-content: center;
 
       background:
+
         linear-gradient(
           135deg,
-          #e8efff,
-          #fff2bd
+          #edf2ff,
+          #fff4cf
         );
 
-      font-size: 55px;
+      font-size: 52px;
     }
 
 
     .gift-body {
+
       padding: 20px;
     }
 
 
     .gift-title {
+
       margin: 0;
 
-      font-size: 22px;
+      font-size: 21px;
 
-      line-height: 1.25;
+      line-height: 1.3;
+
+      font-weight: 750;
     }
 
 
     .gift-notes {
+
       margin-top: 10px;
 
-      color:
-        var(--muted);
+      color: var(--muted);
 
       line-height: 1.55;
 
@@ -855,6 +915,7 @@ function installStyles() {
 
 
     .gift-actions {
+
       display: flex;
 
       flex-wrap: wrap;
@@ -868,16 +929,15 @@ function installStyles() {
 
 
     .claimed {
+
       display: inline-flex;
 
       align-items: center;
 
       padding:
-        9px
-        12px;
+        9px 12px;
 
-      border-radius:
-        10px;
+      border-radius: 10px;
 
       background:
         #e9f7f0;
@@ -887,38 +947,35 @@ function installStyles() {
 
       font-size: 13px;
 
-      font-weight: 850;
+      font-weight: 800;
     }
 
 
-    /* =========================
-       EMPTY
-       ========================= */
+    /* EMPTY */
 
     .empty {
+
       padding:
-        50px
-        25px;
+        50px 25px;
 
       text-align: center;
 
-      color:
-        var(--muted);
+      color: var(--muted);
     }
 
 
     .empty-icon {
+
       font-size: 48px;
 
       margin-bottom: 10px;
     }
 
 
-    /* =========================
-       MODAL
-       ========================= */
+    /* MODAL */
 
     .modal {
+
       position: fixed;
 
       inset: 0;
@@ -935,18 +992,16 @@ function installStyles() {
 
       background:
         rgba(
-          19,
-          28,
-          45,
-          .58
+          19,28,45,.58
         );
 
       backdrop-filter:
-        blur(7px);
+        blur(8px);
     }
 
 
     .modal-box {
+
       width:
         min(
           600px,
@@ -962,83 +1017,74 @@ function installStyles() {
     }
 
 
-    .modal-close {
-      float: right;
-    }
-
-
     .modal-box h2 {
+
       margin:
-        0
-        0
-        8px;
+        0 0 8px;
 
       font-size: 29px;
+
+      font-weight: 800;
     }
 
 
     .modal-box > p {
-      color:
-        var(--muted);
+
+      color: var(--muted);
 
       line-height: 1.55;
     }
 
 
     .field-label {
+
       display: block;
 
       margin:
-        17px
-        0
-        7px;
+        17px 0 7px;
 
       font-size: 13px;
 
-      font-weight: 850;
+      font-weight: 800;
     }
 
 
     .field {
+
       width: 100%;
 
       padding:
-        13px
-        14px;
+        13px 14px;
 
       border:
         1px solid
         var(--line);
 
-      border-radius:
-        12px;
+      border-radius: 12px;
 
-      background:
-        #fff;
+      background: white;
 
-      color:
-        var(--text);
+      color: var(--text);
 
       outline: none;
     }
 
 
     .field:focus {
+
       border-color:
         var(--blue);
 
       box-shadow:
         0 0 0 3px
         rgba(
-          56,
-          103,
-          214,
-          .12
+          65,105,225,.12
         );
     }
 
 
     textarea.field {
+
       min-height: 95px;
 
       resize: vertical;
@@ -1046,20 +1092,18 @@ function installStyles() {
 
 
     .notice {
+
       margin-top: 16px;
 
       padding:
-        13px
-        14px;
+        13px 14px;
 
-      border-radius:
-        12px;
+      border-radius: 12px;
 
       background:
         #f4f6fa;
 
-      color:
-        var(--muted);
+      color: var(--muted);
 
       font-size: 13px;
 
@@ -1068,70 +1112,139 @@ function installStyles() {
 
 
     .modal-submit {
+
       width: 100%;
 
       margin-top: 16px;
     }
 
 
-    /* =========================
-       FOOTER
-       ========================= */
+    /* LOGIN */
+
+    .login-page {
+
+      min-height: 100vh;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      padding: 20px;
+    }
+
+
+    .login-card {
+
+      width:
+        min(
+          480px,
+          100%
+        );
+
+      padding: 32px;
+    }
+
+
+    .login-logo {
+
+      font-size: 13px;
+
+      font-weight: 800;
+
+      letter-spacing: 3px;
+
+      color: var(--blue);
+
+      text-transform: uppercase;
+    }
+
+
+    .login-card h1 {
+
+      margin-top: 12px;
+
+      font-size: 48px;
+    }
+
+
+    .login-error {
+
+      display: none;
+
+      margin-top: 14px;
+
+      padding: 12px;
+
+      border-radius: 11px;
+
+      background:
+        #fff0f0;
+
+      color:
+        #b13e3e;
+
+      font-size: 13px;
+
+      font-weight: 600;
+    }
+
+
+    /* FOOTER */
 
     footer {
+
       padding-top: 42px;
 
       text-align: center;
 
-      color:
-        #8791a2;
+      color: #8791a2;
 
       font-size: 13px;
     }
 
 
-    /* =========================
-       MOBILE
-       ========================= */
+    /* MOBILE */
 
-    @media (max-width: 720px) {
+    @media (max-width:720px) {
 
       .shell {
+
         width:
           calc(100% - 18px);
 
-        padding-top:
-          10px;
+        padding-top: 10px;
       }
 
 
       .hero {
-        padding:
-          28px
-          22px;
 
-        border-radius:
-          23px;
+        padding:
+          28px 22px;
+
+        border-radius: 22px;
       }
 
 
       .hero::after {
+
         position: static;
 
         display: block;
 
-        margin-top:
-          20px;
+        margin-top: 20px;
       }
 
 
       h1 {
-        font-size:
-          47px;
+
+        font-size: 47px;
       }
 
 
       .next {
+
         flex-direction:
           column;
 
@@ -1141,24 +1254,28 @@ function installStyles() {
 
 
       .next .btn {
+
         width: 100%;
       }
 
 
       .people-grid,
       .gift-grid {
+
         grid-template-columns:
           1fr;
       }
 
 
       .person {
+
         min-height:
           185px;
       }
 
 
       .person-bottom {
+
         flex-direction:
           column;
 
@@ -1168,11 +1285,13 @@ function installStyles() {
 
 
       .person-bottom .btn {
+
         width: 100%;
       }
 
 
       .wishlist-nav {
+
         align-items:
           stretch;
 
@@ -1182,12 +1301,30 @@ function installStyles() {
 
 
       .wishlist-nav .btn {
+
+        width: 100%;
+      }
+
+
+      .userbar {
+
+        align-items:
+          flex-start;
+
+        flex-direction:
+          column;
+      }
+
+
+      .userbar .btn {
+
         width: 100%;
       }
 
 
       .gift-image,
       .gift-placeholder {
+
         height:
           220px;
       }
@@ -1196,7 +1333,278 @@ function installStyles() {
 
   `;
 
+
   document.head.appendChild(style);
+
+}
+
+
+/* ============================================================
+   LOGIN SCREEN
+   ============================================================ */
+
+function renderLogin() {
+
+  app.innerHTML = `
+
+    <main class="login-page">
+
+      <section class="login-card card">
+
+        <div class="login-logo">
+          F · R · I · E · N · D · S
+        </div>
+
+        <h1>
+          Friends
+        </h1>
+
+        <p style="color:var(--muted);line-height:1.6">
+          Log in once and you're in.
+          No need to enter your password
+          again when claiming a gift.
+        </p>
+
+
+        <label
+          class="field-label"
+          for="login-person"
+        >
+          Who are you?
+        </label>
+
+        <select
+          id="login-person"
+          class="field"
+        >
+
+          ${PEOPLE.map(person => `
+
+            <option
+              value="${person.id}"
+            >
+              ${escapeHtml(person.name)}
+            </option>
+
+          `).join("")}
+
+        </select>
+
+
+        <label
+          class="field-label"
+          for="login-password"
+        >
+          Password
+        </label>
+
+        <input
+          id="login-password"
+          class="field"
+          type="password"
+          placeholder="Your password"
+          autocomplete="current-password"
+        >
+
+
+        <div
+          id="login-error"
+          class="login-error"
+        ></div>
+
+
+        <button
+          id="login-button"
+          class="btn modal-submit"
+          onclick="login()"
+        >
+          Log in
+        </button>
+
+
+        <div class="notice">
+
+          🔒 Your login stays on this device.
+          Once you're logged in, claiming and
+          undoing claims does not require another
+          password.
+
+        </div>
+
+      </section>
+
+    </main>
+
+  `;
+
+}
+
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+
+window.login = async function() {
+
+  const personId =
+    document
+      .querySelector("#login-person")
+      ?.value;
+
+
+  const password =
+    document
+      .querySelector("#login-password")
+      ?.value;
+
+
+  const button =
+    document
+      .querySelector("#login-button");
+
+
+  const errorBox =
+    document
+      .querySelector("#login-error");
+
+
+  if (!password) {
+
+    errorBox.textContent =
+      "Please enter your password.";
+
+    errorBox.style.display =
+      "block";
+
+    return;
+  }
+
+
+  button.disabled = true;
+
+  button.textContent =
+    "Logging in…";
+
+  errorBox.style.display =
+    "none";
+
+
+  const person =
+    PEOPLE.find(
+      p => p.id === personId
+    );
+
+
+  const {
+    data,
+    error
+  } =
+    await supabase.auth.signInWithPassword({
+
+      email:
+        person.email,
+
+      password:
+        password
+
+    });
+
+
+  if (
+    error ||
+    !data?.user
+  ) {
+
+    console.error(
+      "Login error:",
+      error
+    );
+
+
+    button.disabled = false;
+
+    button.textContent =
+      "Log in";
+
+
+    errorBox.textContent =
+      "The name or password is incorrect.";
+
+    errorBox.style.display =
+      "block";
+
+    return;
+  }
+
+
+  renderHome();
+
+};
+
+
+/* ============================================================
+   LOGOUT
+   ============================================================ */
+
+window.logout = async function() {
+
+  await supabase.auth.signOut();
+
+  renderLogin();
+
+};
+
+
+/* ============================================================
+   USER BAR
+   ============================================================ */
+
+async function userBar() {
+
+  const user =
+    await getCurrentUser();
+
+
+  if (!user) {
+    return "";
+  }
+
+
+  const person =
+    personFromEmail(
+      user.email
+    );
+
+
+  return `
+
+    <div class="userbar">
+
+      <div class="user-info">
+
+        Logged in as
+        <strong>
+          ${escapeHtml(
+            person?.name ||
+            user.email ||
+            "Friend"
+          )}
+        </strong>
+
+      </div>
+
+
+      <button
+        class="btn ghost"
+        onclick="logout()"
+      >
+        Log out
+      </button>
+
+    </div>
+
+  `;
+
 }
 
 
@@ -1204,17 +1612,35 @@ function installStyles() {
    HOME
    ============================================================ */
 
-function renderHome() {
+async function renderHome() {
+
+  const user =
+    await getCurrentUser();
+
+
+  if (!user) {
+
+    renderLogin();
+
+    return;
+
+  }
+
 
   const active =
     getNextBirthdayPerson();
 
+
   const people =
     orderedPeople();
+
 
   app.innerHTML = `
 
     <main class="shell">
+
+      ${await userBar()}
+
 
       <header class="hero">
 
@@ -1228,8 +1654,8 @@ function renderHome() {
 
         <p>
           Four friends. Four wishlists.
-          One place to keep track of the
-          things everyone actually wants.
+          One place for all the things
+          everyone actually wants.
         </p>
 
       </header>
@@ -1245,7 +1671,10 @@ function renderHome() {
 
           <div class="next-name">
 
-            ${escapeHtml(active.name)}
+            ${escapeHtml(
+              active.name
+            )}
+
             ${active.emoji}
 
           </div>
@@ -1288,7 +1717,9 @@ function renderHome() {
 
         ${people.map(person => `
 
-          <article class="person card">
+          <article
+            class="person card"
+          >
 
             <div>
 
@@ -1297,12 +1728,21 @@ function renderHome() {
               </div>
 
               <h2>
-                ${escapeHtml(person.name)}
+
+                ${escapeHtml(
+                  person.name
+                )}
+
                 ${person.emoji}
+
               </h2>
 
               <div class="person-birthday">
-                ${escapeHtml(person.birthday)}
+
+                ${escapeHtml(
+                  person.birthday
+                )}
+
               </div>
 
             </div>
@@ -1313,6 +1753,7 @@ function renderHome() {
               <span class="pill">
                 Wishlist open
               </span>
+
 
               <button
                 class="btn secondary"
@@ -1331,18 +1772,21 @@ function renderHome() {
 
 
       <footer>
-        Made for friends who are tired of
-        pretending they don't want anything.
+
+        Made for friends who are tired
+        of pretending they don't want anything.
+
       </footer>
 
     </main>
 
   `;
+
 }
 
 
 /* ============================================================
-   LOAD GIFTS
+   LOAD WISHLIST
    ============================================================ */
 
 async function loadWishlist(personId) {
@@ -1350,16 +1794,20 @@ async function loadWishlist(personId) {
   const {
     data: gifts,
     error: giftsError
-  } = await supabase
-    .from("gifts")
-    .select("*")
-    .eq("person_id", personId)
-    .order(
-      "created_at",
-      {
-        ascending: true
-      }
-    );
+  } =
+    await supabase
+      .from("gifts")
+      .select("*")
+      .eq(
+        "person_id",
+        personId
+      )
+      .order(
+        "created_at",
+        {
+          ascending: true
+        }
+      );
 
 
   if (giftsError) {
@@ -1373,30 +1821,36 @@ async function loadWishlist(personId) {
       giftsError.message ||
       "Could not load this wishlist."
     );
+
   }
 
 
   if (!gifts?.length) {
+
     return [];
+
   }
 
 
-  const ids =
-    gifts.map(gift => gift.id);
+  const giftIds =
+    gifts.map(
+      gift => gift.id
+    );
 
 
   const {
     data: claims,
     error: claimsError
-  } = await supabase
-    .from("gift_claims")
-    .select(
-      "id,gift_id,shopper_id"
-    )
-    .in(
-      "gift_id",
-      ids
-    );
+  } =
+    await supabase
+      .from("gift_claims")
+      .select(
+        "id,gift_id,shopper_id"
+      )
+      .in(
+        "gift_id",
+        giftIds
+      );
 
 
   if (claimsError) {
@@ -1410,6 +1864,7 @@ async function loadWishlist(personId) {
       claimsError.message ||
       "Could not load claim information."
     );
+
   }
 
 
@@ -1418,8 +1873,10 @@ async function loadWishlist(personId) {
     const claim =
       (claims || []).find(
         item =>
-          item.gift_id === gift.id
+          item.gift_id ===
+          gift.id
       ) || null;
+
 
     return {
       ...gift,
@@ -1432,10 +1889,24 @@ async function loadWishlist(personId) {
 
 
 /* ============================================================
-   OPEN WISHLIST
+   OPEN PERSON
    ============================================================ */
 
-window.openPerson = async function(personId) {
+window.openPerson =
+async function(personId) {
+
+  const user =
+    await getCurrentUser();
+
+
+  if (!user) {
+
+    renderLogin();
+
+    return;
+
+  }
+
 
   const person =
     PEOPLE.find(
@@ -1476,17 +1947,31 @@ window.openPerson = async function(personId) {
       <header class="hero">
 
         <div class="brand">
-          ${escapeHtml(person.birthday)}
+
+          ${escapeHtml(
+            person.birthday
+          )}
+
         </div>
 
+
         <h1>
-          ${escapeHtml(person.name)}
+
+          ${escapeHtml(
+            person.name
+          )}
+
           ${person.emoji}
+
         </h1>
 
+
         <p>
-          Add or change gifts whenever you want.
-          Claiming is available all year.
+
+          Add gifts whenever you want.
+          Claiming is available throughout
+          the entire year.
+
         </p>
 
       </header>
@@ -1497,10 +1982,7 @@ window.openPerson = async function(personId) {
         class="gift-grid"
       >
 
-        <div
-          class="card empty"
-          style="grid-column:1/-1"
-        >
+        <div class="card empty">
 
           <div class="empty-icon">
             ⏳
@@ -1531,11 +2013,6 @@ window.openPerson = async function(personId) {
       );
 
 
-    if (!container) {
-      return;
-    }
-
-
     if (!gifts.length) {
 
       container.innerHTML = `
@@ -1558,6 +2035,7 @@ window.openPerson = async function(personId) {
             genuinely love to receive.
           </p>
 
+
           <button
             class="btn"
             onclick="showAdd('${person.id}')"
@@ -1570,6 +2048,7 @@ window.openPerson = async function(personId) {
       `;
 
       return;
+
     }
 
 
@@ -1615,10 +2094,13 @@ window.openPerson = async function(personId) {
           </h2>
 
           <p>
+
             ${escapeHtml(
               error.message
             )}
+
           </p>
+
 
           <button
             class="btn"
@@ -1642,43 +2124,50 @@ window.openPerson = async function(personId) {
    GIFT CARD
    ============================================================ */
 
-function renderGiftCard(gift, owner) {
+function renderGiftCard(
+  gift,
+  owner
+) {
 
   const image =
-    safeUrl(gift.image_url || "");
+    gift.image_url &&
+    String(
+      gift.image_url
+    ).trim();
 
 
-  const imageHtml = image
+  const imageHtml =
+    image
 
-    ? `
+      ? `
 
-      <img
-        class="gift-image"
-        src="${escapeHtml(image)}"
-        alt="${escapeHtml(gift.name)}"
-        loading="lazy"
-        onerror="
-          this.style.display='none';
-          this.nextElementSibling.style.display='flex';
-        "
-      >
+        <img
+          class="gift-image"
+          src="${escapeHtml(image)}"
+          alt="${escapeHtml(gift.name)}"
+          loading="lazy"
+          onerror="
+            this.style.display='none';
+            this.nextElementSibling.style.display='flex';
+          "
+        >
 
-      <div
-        class="gift-placeholder"
-        style="display:none"
-      >
-        🎁
-      </div>
+        <div
+          class="gift-placeholder"
+          style="display:none"
+        >
+          🎁
+        </div>
 
-    `
+      `
 
-    : `
+      : `
 
-      <div class="gift-placeholder">
-        🎁
-      </div>
+        <div class="gift-placeholder">
+          🎁
+        </div>
 
-    `;
+      `;
 
 
   const claimed =
@@ -1695,63 +2184,98 @@ function renderGiftCard(gift, owner) {
       <div class="gift-body">
 
         <h3 class="gift-title">
-          ${escapeHtml(gift.name)}
+
+          ${escapeHtml(
+            gift.name
+          )}
+
         </h3>
 
 
         ${
           gift.notes
+
             ? `
+
               <div class="gift-notes">
-                ${escapeHtml(gift.notes)}
+
+                ${escapeHtml(
+                  gift.notes
+                )}
+
               </div>
+
             `
+
             : ""
         }
 
 
         <div class="gift-actions">
 
+
           ${
             gift.url
+
               ? `
+
                 <a
                   class="btn secondary"
                   href="${escapeHtml(
-                    safeUrl(gift.url) || "#"
+                    gift.url
                   )}"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   View item ↗
                 </a>
+
               `
+
               : ""
           }
 
 
           ${
             claimed
+
               ? `
+
                 <span class="claimed">
                   ✓ Claimed
                 </span>
 
-                <button
-                  class="btn danger"
-                  onclick="unclaimItem('${gift.id}')"
-                >
-                  Undo claim
-                </button>
+                ${
+                  gift.claim &&
+                  gift.claim.shopper_id
+
+                    ? `
+
+                      <button
+                        class="btn danger"
+                        onclick="unclaimItem('${gift.id}')"
+                      >
+                        Undo my claim
+                      </button>
+
+                    `
+
+                    : ""
+                }
+
               `
+
               : `
+
                 <button
                   class="btn"
                   onclick="claimItem('${gift.id}')"
                 >
                   🎁 Claim
                 </button>
+
               `
+
           }
 
         </div>
@@ -1769,7 +2293,8 @@ function renderGiftCard(gift, owner) {
    ADD GIFT
    ============================================================ */
 
-window.showAdd = function(personId) {
+window.showAdd =
+function(personId) {
 
   const person =
     PEOPLE.find(
@@ -1801,6 +2326,7 @@ window.showAdd = function(personId) {
 
           <button
             class="btn ghost modal-close"
+            style="float:right"
             onclick="closeModal()"
           >
             Close
@@ -1825,6 +2351,7 @@ window.showAdd = function(personId) {
             What do you want?
           </label>
 
+
           <input
             id="gift-name"
             class="field"
@@ -1839,6 +2366,23 @@ window.showAdd = function(personId) {
             for="gift-url"
           >
             Shopping link
+          </label>
+
+
+          <input
+            id="gift-url"
+            class="field"
+            type="url"
+            placeholder="https://..."
+            autocomplete="off"
+          >
+
+
+          <label
+            class="field-label"
+            for="gift-image"
+          >
+            Picture URL
             <span
               style="
                 font-weight:500;
@@ -1849,11 +2393,12 @@ window.showAdd = function(personId) {
             </span>
           </label>
 
+
           <input
-            id="gift-url"
+            id="gift-image"
             class="field"
             type="url"
-            placeholder="https://..."
+            placeholder="Optional image URL"
             autocomplete="off"
           >
 
@@ -1873,6 +2418,7 @@ window.showAdd = function(personId) {
             </span>
           </label>
 
+
           <textarea
             id="gift-notes"
             class="field"
@@ -1882,14 +2428,14 @@ window.showAdd = function(personId) {
 
           <div class="notice">
 
-            💡 You can add gifts throughout
-            the year. There is no 30-day
-            restriction.
+            💡 You can add gifts anytime.
+            Claiming is available all year.
 
           </div>
 
 
           <button
+            id="add-gift-button"
             class="btn modal-submit"
             onclick="saveGift('${person.id}')"
           >
@@ -1910,7 +2456,8 @@ window.showAdd = function(personId) {
    CLOSE MODAL
    ============================================================ */
 
-window.closeModal = function() {
+window.closeModal =
+function() {
 
   document
     .querySelector("#modal")
@@ -1923,7 +2470,23 @@ window.closeModal = function() {
    SAVE GIFT
    ============================================================ */
 
-window.saveGift = async function(personId) {
+window.saveGift =
+async function(personId) {
+
+  const user =
+    await getCurrentUser();
+
+
+  if (!user) {
+
+    closeModal();
+
+    renderLogin();
+
+    return;
+
+  }
+
 
   const name =
     document
@@ -1932,9 +2495,16 @@ window.saveGift = async function(personId) {
       .trim();
 
 
-  const urlInput =
+  const url =
     document
       .querySelector("#gift-url")
+      ?.value
+      .trim();
+
+
+  const image =
+    document
+      .querySelector("#gift-image")
       ?.value
       .trim();
 
@@ -1953,31 +2523,41 @@ window.saveGift = async function(personId) {
     );
 
     return;
+
   }
 
 
-  let url = null;
+  if (
+    url &&
+    !/^https?:\/\//i.test(url)
+  ) {
 
-  if (urlInput) {
+    alert(
+      "The shopping link should start with https://"
+    );
 
-    url =
-      safeUrl(urlInput);
+    return;
 
-    if (!url) {
+  }
 
-      alert(
-        "The shopping link should start with https:// or http://"
-      );
 
-      return;
-    }
+  if (
+    image &&
+    !/^https?:\/\//i.test(image)
+  ) {
+
+    alert(
+      "The image link should start with https://"
+    );
+
+    return;
 
   }
 
 
   const button =
     document.querySelector(
-      "#modal .modal-submit"
+      "#add-gift-button"
     );
 
 
@@ -1991,29 +2571,29 @@ window.saveGift = async function(personId) {
   }
 
 
-  const gift = {
-
-    person_id:
-      personId,
-
-    name:
-      name,
-
-    url:
-      url,
-
-    notes:
-      notes || null
-
-  };
-
-
   const {
     error
   } =
     await supabase
       .from("gifts")
-      .insert(gift);
+      .insert({
+
+        person_id:
+          personId,
+
+        name:
+          name,
+
+        url:
+          url || null,
+
+        image_url:
+          image || null,
+
+        notes:
+          notes || null
+
+      });
 
 
   if (error) {
@@ -2040,6 +2620,7 @@ window.saveGift = async function(personId) {
     );
 
     return;
+
   }
 
 
@@ -2053,221 +2634,27 @@ window.saveGift = async function(personId) {
 
 
 /* ============================================================
-   CLAIM
+   CLAIM GIFT
    ============================================================ */
 
-window.claimItem = async function(giftId) {
+window.claimItem =
+async function(giftId) {
 
-  closeModal();
-
-
-  app.insertAdjacentHTML(
-    "beforeend",
-    `
-
-      <div
-        class="modal"
-        id="modal"
-      >
-
-        <div
-          class="modal-box card"
-        >
-
-          <button
-            class="btn ghost modal-close"
-            onclick="closeModal()"
-          >
-            Close
-          </button>
+  const user =
+    await getCurrentUser();
 
 
-          <h2>
-            Claim this gift 🎁
-          </h2>
+  if (!user) {
 
-
-          <p>
-            Choose your name and enter
-            your PIN/password.
-          </p>
-
-
-          <label
-            class="field-label"
-            for="shopper"
-          >
-            Your name
-          </label>
-
-          <select
-            id="shopper"
-            class="field"
-          >
-
-            ${PEOPLE.map(
-              person =>
-                `
-                  <option
-                    value="${person.id}"
-                  >
-                    ${escapeHtml(
-                      person.name
-                    )}
-                  </option>
-                `
-            ).join("")}
-
-          </select>
-
-
-          <label
-            class="field-label"
-            for="claim-password"
-          >
-            PIN / password
-          </label>
-
-          <input
-            id="claim-password"
-            class="field"
-            type="password"
-            autocomplete="current-password"
-            placeholder="Enter your PIN/password"
-          >
-
-
-          <div class="notice">
-
-            🔒 The birthday person will
-            not be told who claimed it.
-
-          </div>
-
-
-          <button
-            id="claim-submit"
-            class="btn modal-submit"
-            onclick="doClaim('${giftId}')"
-          >
-            Claim this gift
-          </button>
-
-        </div>
-
-      </div>
-
-    `
-  );
-
-};
-
-
-/* ============================================================
-   DO CLAIM
-   ============================================================ */
-
-window.doClaim = async function(giftId) {
-
-  const shopperId =
-    document
-      .querySelector("#shopper")
-      ?.value;
-
-
-  const password =
-    document
-      .querySelector("#claim-password")
-      ?.value;
-
-
-  if (!shopperId || !password) {
-
-    alert(
-      "Please enter your name and PIN/password."
-    );
+    renderLogin();
 
     return;
-  }
-
-
-  const email =
-    AUTH_EMAILS[
-      shopperId
-    ];
-
-
-  if (!email) {
-
-    alert(
-      "That account could not be found."
-    );
-
-    return;
-  }
-
-
-  const button =
-    document.querySelector(
-      "#claim-submit"
-    );
-
-
-  if (button) {
-
-    button.disabled = true;
-
-    button.textContent =
-      "Checking…";
 
   }
 
 
   /*
-    SIGN IN
-  */
-
-  const {
-    data: authData,
-    error: authError
-  } =
-    await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-
-  if (
-    authError ||
-    !authData?.user
-  ) {
-
-    console.error(
-      "Authentication error:",
-      authError
-    );
-
-
-    if (button) {
-
-      button.disabled = false;
-
-      button.textContent =
-        "Claim this gift";
-
-    }
-
-
-    alert(
-      "That PIN/password didn't work."
-    );
-
-    return;
-  }
-
-
-  /*
-    FIND GIFT
+    Find the gift.
   */
 
   const {
@@ -2295,34 +2682,39 @@ window.doClaim = async function(giftId) {
       giftError
     );
 
-
     alert(
       "Couldn't find this gift."
     );
 
     return;
+
   }
 
 
   /*
-    DON'T ALLOW A PERSON TO
-    CLAIM THEIR OWN GIFTS
+    Don't allow someone to claim
+    their own birthday gift.
   */
 
   if (
-    gift.person_id === shopperId
+    gift.person_id ===
+    personFromEmail(
+      user.email
+    )?.id
   ) {
 
     alert(
-      "You can't claim your own birthday gifts."
+      "You can't claim your own birthday gift."
     );
 
     return;
+
   }
 
 
   /*
-    CHECK EXISTING CLAIM
+    Check whether somebody has
+    already claimed it.
   */
 
   const {
@@ -2345,13 +2737,13 @@ window.doClaim = async function(giftId) {
       existingError
     );
 
-
     alert(
       "Couldn't check the claim status.\n\n" +
       existingError.message
     );
 
     return;
+
   }
 
 
@@ -2361,13 +2753,20 @@ window.doClaim = async function(giftId) {
       "That gift has already been claimed."
     );
 
+    await openPerson(
+      gift.person_id
+    );
+
     return;
+
   }
 
 
   /*
-    CLAIM — AVAILABLE ALL YEAR.
-    NO DATE CHECK.
+    CLAIM.
+    No password.
+    No PIN.
+    No birthday restriction.
   */
 
   const {
@@ -2381,7 +2780,7 @@ window.doClaim = async function(giftId) {
           giftId,
 
         shopper_id:
-          authData.user.id
+          user.id
 
       });
 
@@ -2403,7 +2802,9 @@ window.doClaim = async function(giftId) {
         "That gift has already been claimed."
       );
 
-    } else {
+    }
+
+    else {
 
       alert(
         "Couldn't claim this gift.\n\n" +
@@ -2412,11 +2813,10 @@ window.doClaim = async function(giftId) {
 
     }
 
+
     return;
+
   }
-
-
-  closeModal();
 
 
   alert(
@@ -2436,86 +2836,26 @@ window.doClaim = async function(giftId) {
    UNCLAIM
    ============================================================ */
 
-window.unclaimItem = async function(giftId) {
+window.unclaimItem =
+async function(giftId) {
 
-  const {
-    data: {
-      user
-    }
-  } =
-    await supabase.auth.getUser();
+  const user =
+    await getCurrentUser();
 
 
   if (!user) {
 
-    alert(
-      "Please claim the gift again after signing in."
-    );
+    renderLogin();
 
     return;
-  }
 
-
-  /*
-    Find ONLY the claim belonging
-    to the currently signed-in user.
-  */
-
-  const {
-    data: ownClaim,
-    error: ownClaimError
-  } =
-    await supabase
-      .from("gift_claims")
-      .select(
-        "id,gift_id,shopper_id"
-      )
-      .eq(
-        "gift_id",
-        giftId
-      )
-      .eq(
-        "shopper_id",
-        user.id
-      )
-      .maybeSingle();
-
-
-  if (ownClaimError) {
-
-    console.error(
-      ownClaimError
-    );
-
-
-    alert(
-      "Couldn't check your claim.\n\n" +
-      ownClaimError.message
-    );
-
-    return;
-  }
-
-
-  /*
-    Prevent somebody from
-    removing another person's claim.
-  */
-
-  if (!ownClaim) {
-
-    alert(
-      "You can only undo your own claim."
-    );
-
-    return;
   }
 
 
   const confirmed =
     confirm(
       "Undo your claim?\n\n" +
-      "The gift will become available for someone else."
+      "The gift will become available again."
     );
 
 
@@ -2524,47 +2864,72 @@ window.unclaimItem = async function(giftId) {
   }
 
 
+  /*
+    Delete ONLY the claim belonging
+    to the currently logged-in user.
+  */
+
   const {
-    error: deleteError
+    data: deletedClaims,
+    error
   } =
     await supabase
       .from("gift_claims")
       .delete()
       .eq(
-        "id",
-        ownClaim.id
+        "gift_id",
+        giftId
       )
       .eq(
         "shopper_id",
         user.id
-      );
+      )
+      .select("id");
 
 
-  if (deleteError) {
+  if (error) {
 
     console.error(
       "Unclaim error:",
-      deleteError
+      error
     );
 
 
     alert(
       "Couldn't undo the claim.\n\n" +
-      deleteError.message
+      error.message
     );
 
     return;
+
   }
 
+
+  if (
+    !deletedClaims ||
+    deletedClaims.length === 0
+  ) {
+
+    alert(
+      "You haven't claimed this gift."
+    );
+
+    return;
+
+  }
+
+
+  /*
+    Find the wishlist owner
+    and reload their wishlist.
+  */
 
   const {
     data: gift
   } =
     await supabase
       .from("gifts")
-      .select(
-        "person_id"
-      )
+      .select("person_id")
       .eq(
         "id",
         giftId
@@ -2584,7 +2949,9 @@ window.unclaimItem = async function(giftId) {
       gift.person_id
     );
 
-  } else {
+  }
+
+  else {
 
     renderHome();
 
@@ -2594,55 +2961,9 @@ window.unclaimItem = async function(giftId) {
 
 
 /* ============================================================
-   START APP
+   START APPLICATION
    ============================================================ */
 
-try {
+installStyles();
 
-  installStyles();
-
-  renderHome();
-
-} catch (error) {
-
-  console.error(
-    "Application startup error:",
-    error
-  );
-
-  app.innerHTML = `
-
-    <main
-      style="
-        max-width:700px;
-        margin:60px auto;
-        padding:30px;
-        font-family:Arial,sans-serif;
-      "
-    >
-
-      <h1>
-        Something went wrong
-      </h1>
-
-      <p>
-        The application could not start.
-      </p>
-
-      <pre
-        style="
-          white-space:pre-wrap;
-          background:#f4f4f4;
-          padding:20px;
-          border-radius:12px;
-        "
-      >${escapeHtml(
-        error.message ||
-        String(error)
-      )}</pre>
-
-    </main>
-
-  `;
-
-     }
+renderHome();
