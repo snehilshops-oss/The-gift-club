@@ -1,76 +1,100 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-/* =========================================================
-   F·R·I·E·N·D·S
-   =========================================================
-   TEST MODE:
-   true  = Shibam's claiming is temporarily open for testing
-   false = normal 30-day birthday rule
-   ========================================================= */
-
-const TEST_MODE = true;
+/* ============================================================
+   FRIENDS — SHARED BIRTHDAY WISHLISTS
+   ============================================================ */
 
 const SUPABASE_URL =
   "https://pkfdvmvjdcvmmyuhskmg.supabase.co";
 
-const SUPABASE_ANON_KEY =
-  "sb_publishable_6gicMOPUD296szSyxFBm3A_mi_uSfvjP0AQtM8yn0PsxE";
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_6gicMOPUD296szSyxFBm3A_mi_uSfvj";
 
-const configured =
-  !SUPABASE_URL.includes("PASTE_") &&
-  !SUPABASE_ANON_KEY.includes("PASTE_");
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
+);
 
-const supabase = configured
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
 
-const app = document.querySelector("#app");
-
-/* =========================================================
+/* ============================================================
    PEOPLE
-   ========================================================= */
+   ============================================================ */
 
 const PEOPLE = [
   {
     id: "khushi",
     name: "Khushi",
     birthday: "27 February",
-    month: 1,
-    day: 27,
-    email: "khushi@giftclub.local"
+    emoji: "🎂"
   },
   {
     id: "snehil",
     name: "Snehil",
     birthday: "27 July",
-    month: 6,
-    day: 27,
-    email: "snehil@giftclub.local"
+    emoji: "🎈"
   },
   {
     id: "riya",
     name: "Riya",
     birthday: "31 August",
-    month: 7,
-    day: 31,
-    email: "riya@giftclub.local"
+    emoji: "🎉"
   },
   {
     id: "shibam",
     name: "Shibam",
     birthday: "16 October",
-    month: 9,
-    day: 16,
-    email: "shibam@giftclub.local"
+    emoji: "🥳"
   }
 ];
 
-/* =========================================================
-   HELPERS
-   ========================================================= */
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December"
+];
+
+
+/* ============================================================
+   AUTH EMAILS
+   ============================================================ */
+
+const AUTH_EMAILS = {
+  snehil: "snehil@giftclub.local",
+  khushi: "khushi@giftclub.local",
+  riya: "riya@giftclub.local",
+  shibam: "shibam@giftclub.local"
+};
+
+
+/* ============================================================
+   APP
+   ============================================================ */
+
+const app = document.querySelector("#app");
+
+
+/* ============================================================
+   BASIC HELPERS
+   ============================================================ */
 
 function escapeHtml(value = "") {
-  return String(value).replace(/[&<>"']/g, (character) => ({
+  return String(value).replace(/[&<>"']/g, character => ({
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
@@ -79,21 +103,21 @@ function escapeHtml(value = "") {
   }[character]));
 }
 
-function formatDate(date) {
-  return date.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  });
-}
 
 function nextBirthday(person) {
   const now = new Date();
 
-  let birthday = new Date(
+  const parts = person.birthday.split(" ");
+
+  const day = Number(parts[0]);
+
+  const monthIndex =
+    MONTHS.indexOf(parts[1]);
+
+  let date = new Date(
     now.getFullYear(),
-    person.month,
-    person.day
+    monthIndex,
+    day
   );
 
   const today = new Date(
@@ -102,85 +126,1042 @@ function nextBirthday(person) {
     now.getDate()
   );
 
-  if (birthday < today) {
-    birthday = new Date(
+  if (date < today) {
+    date = new Date(
       now.getFullYear() + 1,
-      person.month,
-      person.day
+      monthIndex,
+      day
     );
   }
 
-  return birthday;
+  return date;
 }
 
-function sortedPeopleByBirthday() {
+
+function formatBirthday(date) {
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+}
+
+
+function orderedPeople() {
   return [...PEOPLE].sort(
-    (a, b) => nextBirthday(a) - nextBirthday(b)
+    (a, b) =>
+      nextBirthday(a) - nextBirthday(b)
   );
 }
 
-function activeBirthday() {
-  return sortedPeopleByBirthday()[0];
+
+function getNextBirthdayPerson() {
+  return orderedPeople()[0];
 }
 
-function isClaimingOpen(person) {
-  /*
-     TEST MODE:
-     Only Shibam gets the temporary testing override.
-     Everyone else still follows the normal 30-day rule.
-  */
 
-  if (TEST_MODE && person.id === "shibam") {
-    return true;
+/* ============================================================
+   STYLES
+   ============================================================ */
+
+function installStyles() {
+
+  if (document.querySelector("#friends-styles")) {
+    return;
   }
 
-  const birthday = nextBirthday(person);
-  const now = new Date();
+  const style = document.createElement("style");
 
-  const openingDate = new Date(birthday);
-  openingDate.setDate(openingDate.getDate() - 30);
+  style.id = "friends-styles";
 
-  return now >= openingDate && now <= birthday;
+  style.textContent = `
+
+    :root {
+      --bg: #f4f6fa;
+      --card: #ffffff;
+      --text: #182235;
+      --muted: #69758a;
+      --line: #e3e7ef;
+
+      --blue: #4676e8;
+      --blue-dark: #315ec7;
+
+      --yellow: #f7c948;
+      --orange: #f29a4a;
+      --green: #45ad7b;
+      --purple: #8067d9;
+      --red: #df6262;
+
+      --shadow:
+        0 10px 32px rgba(25, 38, 65, .08);
+
+      --radius: 20px;
+    }
+
+
+    * {
+      box-sizing: border-box;
+    }
+
+
+    body {
+      margin: 0;
+
+      font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+      color: var(--text);
+
+      background:
+        radial-gradient(
+          circle at 5% 0%,
+          rgba(70,118,232,.10),
+          transparent 27%
+        ),
+
+        radial-gradient(
+          circle at 95% 5%,
+          rgba(247,201,72,.13),
+          transparent 25%
+        ),
+
+        var(--bg);
+    }
+
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+
+    a {
+      text-decoration: none;
+    }
+
+
+    .shell {
+      width: min(
+        1080px,
+        calc(100% - 28px)
+      );
+
+      margin: auto;
+
+      padding:
+        22px
+        0
+        55px;
+    }
+
+
+    /* =========================
+       HERO
+       ========================= */
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+
+      padding: 38px;
+
+      margin-bottom: 22px;
+
+      border-radius: 28px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #ffffff 0%,
+          #f1f5ff 55%,
+          #fff9df 100%
+        );
+
+      border: 1px solid #edf0f5;
+
+      box-shadow: var(--shadow);
+    }
+
+
+    .hero::after {
+      content:
+        "✦   🎈   ✦   🎁";
+
+      position: absolute;
+
+      right: 28px;
+      top: 25px;
+
+      font-size: 25px;
+
+      opacity: .55;
+
+      letter-spacing: 7px;
+    }
+
+
+    .brand {
+      color: var(--blue);
+
+      font-size: 13px;
+
+      font-weight: 900;
+
+      letter-spacing: 4px;
+
+      text-transform: uppercase;
+    }
+
+
+    h1 {
+      margin:
+        11px
+        0
+        12px;
+
+      font-size:
+        clamp(
+          42px,
+          7vw,
+          68px
+        );
+
+      line-height: .95;
+
+      letter-spacing: -3px;
+    }
+
+
+    .hero p {
+      max-width: 690px;
+
+      margin: 0;
+
+      color: var(--muted);
+
+      font-size: 16px;
+
+      line-height: 1.65;
+    }
+
+
+    /* =========================
+       CARDS
+       ========================= */
+
+    .card {
+      background: var(--card);
+
+      border:
+        1px solid
+        var(--line);
+
+      border-radius:
+        var(--radius);
+
+      box-shadow:
+        var(--shadow);
+    }
+
+
+    /* =========================
+       NEXT BIRTHDAY
+       ========================= */
+
+    .next {
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      gap: 20px;
+
+      padding: 25px 28px;
+
+      margin-bottom: 40px;
+
+      border-top:
+        4px solid
+        var(--yellow);
+    }
+
+
+    .pill {
+      display: inline-flex;
+
+      padding:
+        7px
+        11px;
+
+      border-radius:
+        999px;
+
+      background:
+        #edf2ff;
+
+      color:
+        var(--blue-dark);
+
+      font-size: 10px;
+
+      font-weight: 900;
+
+      letter-spacing: 1px;
+
+      text-transform: uppercase;
+    }
+
+
+    .next-name {
+      margin-top: 9px;
+
+      font-size: 30px;
+
+      font-weight: 850;
+    }
+
+
+    .date {
+      margin-top: 4px;
+
+      color: var(--muted);
+
+      font-weight: 600;
+    }
+
+
+    /* =========================
+       SECTION
+       ========================= */
+
+    .section-head {
+      margin-bottom: 17px;
+    }
+
+
+    .section-head h2 {
+      margin:
+        0
+        0
+        5px;
+
+      font-size: 28px;
+    }
+
+
+    .section-head p {
+      margin: 0;
+
+      color: var(--muted);
+    }
+
+
+    /* =========================
+       PEOPLE
+       ========================= */
+
+    .people-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          2,
+          minmax(0, 1fr)
+        );
+
+      gap: 18px;
+    }
+
+
+    .person {
+      min-height: 205px;
+
+      padding: 24px;
+
+      display: flex;
+
+      flex-direction: column;
+
+      justify-content:
+        space-between;
+
+      overflow: hidden;
+
+      position: relative;
+    }
+
+
+    .person:nth-child(1) {
+      border-top:
+        5px solid
+        var(--purple);
+    }
+
+
+    .person:nth-child(2) {
+      border-top:
+        5px solid
+        var(--blue);
+    }
+
+
+    .person:nth-child(3) {
+      border-top:
+        5px solid
+        var(--green);
+    }
+
+
+    .person:nth-child(4) {
+      border-top:
+        5px solid
+        var(--orange);
+    }
+
+
+    .person-label {
+      color: var(--muted);
+
+      font-size: 12px;
+
+      font-weight: 800;
+
+      letter-spacing: 1.5px;
+
+      text-transform: uppercase;
+    }
+
+
+    .person h2 {
+      margin:
+        7px
+        0
+        5px;
+
+      font-size: 31px;
+
+      letter-spacing: -1px;
+    }
+
+
+    .person-birthday {
+      color: var(--muted);
+
+      font-weight: 650;
+    }
+
+
+    .person-bottom {
+      display: flex;
+
+      align-items: center;
+
+      justify-content:
+        space-between;
+
+      gap: 10px;
+
+      margin-top: 20px;
+    }
+
+
+    /* =========================
+       BUTTONS
+       ========================= */
+
+    .btn {
+      display: inline-flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      min-height: 43px;
+
+      padding:
+        11px
+        16px;
+
+      border: 0;
+
+      border-radius: 12px;
+
+      background:
+        var(--blue);
+
+      color: #fff;
+
+      font-weight: 800;
+
+      cursor: pointer;
+
+      transition:
+        .15s ease;
+    }
+
+
+    .btn:hover {
+      background:
+        var(--blue-dark);
+
+      transform:
+        translateY(-1px);
+    }
+
+
+    .btn.secondary {
+      background:
+        #edf1f7;
+
+      color:
+        #29364d;
+    }
+
+
+    .btn.secondary:hover {
+      background:
+        #e0e6ef;
+    }
+
+
+    .btn.ghost {
+      background:
+        transparent;
+
+      color:
+        #3d4b63;
+
+      border:
+        1px solid
+        var(--line);
+    }
+
+
+    .btn.danger {
+      background:
+        #fff0f0;
+
+      color:
+        var(--red);
+
+      border:
+        1px solid
+        #ffd5d5;
+    }
+
+
+    .btn.danger:hover {
+      background:
+        #ffe3e3;
+
+      transform: none;
+    }
+
+
+    .btn:disabled {
+      opacity: .65;
+
+      cursor:
+        not-allowed;
+
+      transform: none;
+    }
+
+
+    /* =========================
+       WISHLIST HEADER
+       ========================= */
+
+    .wishlist-nav {
+      display: flex;
+
+      justify-content:
+        space-between;
+
+      align-items: center;
+
+      gap: 12px;
+
+      margin-bottom: 18px;
+    }
+
+
+    /* =========================
+       GIFTS
+       ========================= */
+
+    .gift-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          2,
+          minmax(0, 1fr)
+        );
+
+      gap: 20px;
+    }
+
+
+    .gift {
+      overflow: hidden;
+    }
+
+
+    .gift-image {
+      width: 100%;
+
+      height: 245px;
+
+      display: block;
+
+      object-fit: cover;
+
+      background:
+        linear-gradient(
+          135deg,
+          #eaf0ff,
+          #fff3c5
+        );
+    }
+
+
+    .gift-placeholder {
+      width: 100%;
+
+      height: 245px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      background:
+        linear-gradient(
+          135deg,
+          #edf2ff,
+          #fff4cf
+        );
+
+      font-size: 55px;
+    }
+
+
+    .gift-body {
+      padding: 20px;
+    }
+
+
+    .gift-title {
+      margin: 0;
+
+      font-size: 22px;
+
+      line-height: 1.25;
+    }
+
+
+    .gift-notes {
+      margin-top: 10px;
+
+      color: var(--muted);
+
+      line-height: 1.55;
+
+      white-space: pre-wrap;
+    }
+
+
+    .gift-actions {
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 9px;
+
+      align-items: center;
+
+      margin-top: 18px;
+    }
+
+
+    .claimed {
+      display: inline-flex;
+
+      align-items: center;
+
+      padding:
+        9px
+        12px;
+
+      border-radius:
+        10px;
+
+      background:
+        #e9f7f0;
+
+      color:
+        #23845c;
+
+      font-size: 13px;
+
+      font-weight: 850;
+    }
+
+
+    /* =========================
+       EMPTY
+       ========================= */
+
+    .empty {
+      padding:
+        50px
+        25px;
+
+      text-align: center;
+
+      color: var(--muted);
+    }
+
+
+    .empty-icon {
+      font-size: 48px;
+
+      margin-bottom: 10px;
+    }
+
+
+    /* =========================
+       MODAL
+       ========================= */
+
+    .modal {
+      position: fixed;
+
+      inset: 0;
+
+      z-index: 10000;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      padding: 16px;
+
+      background:
+        rgba(
+          19,
+          28,
+          45,
+          .58
+        );
+
+      backdrop-filter:
+        blur(8px);
+    }
+
+
+    .modal-box {
+      width:
+        min(
+          600px,
+          100%
+        );
+
+      max-height:
+        92vh;
+
+      overflow-y: auto;
+
+      padding: 28px;
+    }
+
+
+    .modal-close {
+      float: right;
+    }
+
+
+    .modal-box h2 {
+      margin:
+        0
+        0
+        8px;
+
+      font-size: 29px;
+    }
+
+
+    .modal-box > p {
+      color: var(--muted);
+
+      line-height: 1.55;
+    }
+
+
+    .field-label {
+      display: block;
+
+      margin:
+        17px
+        0
+        7px;
+
+      font-size: 13px;
+
+      font-weight: 850;
+    }
+
+
+    .field {
+      width: 100%;
+
+      padding:
+        13px
+        14px;
+
+      border:
+        1px solid
+        var(--line);
+
+      border-radius:
+        12px;
+
+      background:
+        #fff;
+
+      color:
+        var(--text);
+
+      outline: none;
+    }
+
+
+    .field:focus {
+      border-color:
+        var(--blue);
+
+      box-shadow:
+        0 0 0 3px
+        rgba(
+          70,
+          118,
+          232,
+          .12
+        );
+    }
+
+
+    textarea.field {
+      min-height: 95px;
+
+      resize: vertical;
+    }
+
+
+    .notice {
+      margin-top: 16px;
+
+      padding:
+        13px
+        14px;
+
+      border-radius:
+        12px;
+
+      background:
+        #f4f6fa;
+
+      color:
+        var(--muted);
+
+      font-size: 13px;
+
+      line-height: 1.5;
+    }
+
+
+    .modal-submit {
+      width: 100%;
+
+      margin-top: 16px;
+    }
+
+
+    /* =========================
+       FOOTER
+       ========================= */
+
+    footer {
+      padding-top: 42px;
+
+      text-align: center;
+
+      color:
+        #8791a2;
+
+      font-size: 13px;
+    }
+
+
+    /* =========================
+       MOBILE
+       ========================= */
+
+    @media (max-width: 720px) {
+
+      .shell {
+        width:
+          calc(100% - 18px);
+
+        padding-top:
+          10px;
+      }
+
+
+      .hero {
+        padding:
+          28px
+          22px;
+
+        border-radius:
+          23px;
+      }
+
+
+      .hero::after {
+        position: static;
+
+        display: block;
+
+        margin-top:
+          20px;
+      }
+
+
+      h1 {
+        font-size:
+          47px;
+      }
+
+
+      .next {
+        flex-direction:
+          column;
+
+        align-items:
+          stretch;
+      }
+
+
+      .next .btn {
+        width: 100%;
+      }
+
+
+      .people-grid,
+      .gift-grid {
+        grid-template-columns:
+          1fr;
+      }
+
+
+      .person {
+        min-height:
+          185px;
+      }
+
+
+      .person-bottom {
+        flex-direction:
+          column;
+
+        align-items:
+          stretch;
+      }
+
+
+      .person-bottom .btn {
+        width: 100%;
+      }
+
+
+      .wishlist-nav {
+        align-items:
+          stretch;
+
+        flex-direction:
+          column;
+      }
+
+
+      .wishlist-nav .btn {
+        width: 100%;
+      }
+
+
+      .gift-image,
+      .gift-placeholder {
+        height:
+          220px;
+      }
+
+    }
+
+  `;
+
+  document.head.appendChild(style);
 }
 
-/* =========================================================
-   HOME
-   ========================================================= */
 
-function render() {
-  const active = activeBirthday();
-  const people = sortedPeopleByBirthday();
+/* ============================================================
+   HOME
+   ============================================================ */
+
+function renderHome() {
+
+  const active =
+    getNextBirthdayPerson();
+
+  const people =
+    orderedPeople();
+
 
   app.innerHTML = `
+
     <main class="shell">
 
       <header class="hero">
-        <div>
 
-          <div class="kicker">
-            Four friends · ten years · still going
-          </div>
-
-          <h1>F·R·I·E·N·D·S</h1>
-
-          <p>
-            A little place for four people to remember
-            what they actually want for their birthdays.
-          </p>
-
+        <div class="brand">
+          F · R · I · E · N · D · S
         </div>
+
+        <h1>
+          Friends
+        </h1>
+
+        <p>
+          Four friends. Four wishlists.
+          One place to keep track of the
+          things everyone actually wants.
+        </p>
+
       </header>
 
-      ${
-        TEST_MODE
-          ? `
-            <div class="test-banner">
-              🧪 Test mode is ON · Shibam's gift claiming
-              is temporarily open
-            </div>
-          `
-          : ""
-      }
 
       <section class="next card">
 
@@ -190,306 +1171,492 @@ function render() {
             NEXT BIRTHDAY
           </span>
 
-          <div class="name">
+          <div class="next-name">
+
             ${escapeHtml(active.name)}
+            ${active.emoji}
+
           </div>
 
           <div class="date">
-            ${formatDate(nextBirthday(active))}
+
+            ${formatBirthday(
+              nextBirthday(active)
+            )}
+
           </div>
 
         </div>
+
 
         <button
           class="btn"
           onclick="openPerson('${active.id}')"
         >
-          Open ${escapeHtml(active.name)}'s wishlist
+          Open wishlist
         </button>
 
       </section>
 
+
       <div class="section-head">
-        <div>
-          <h2>The four of us ✨</h2>
-          <p>
-            Everyone can browse every wishlist, all year.
-          </p>
-        </div>
+
+        <h2>
+          The four of us
+        </h2>
+
+        <p>
+          Browse everyone's wishlist anytime.
+        </p>
+
       </div>
 
-      <section class="grid">
 
-        ${people.map((person) => {
+      <section class="people-grid">
 
-          const claimingOpen =
-            isClaimingOpen(person);
+        ${people.map(person => `
 
-          return `
-            <article class="person card">
+          <article class="person card">
 
-              <div class="person-top">
+            <div>
 
-                <div class="avatar">
-                  ${person.name.charAt(0)}
-                </div>
-
-                <div>
-                  <div class="kicker">
-                    Birthday
-                  </div>
-
-                  <h2>
-                    ${escapeHtml(person.name)}
-                  </h2>
-
-                  <div class="birthday">
-                    ${escapeHtml(person.birthday)}
-                  </div>
-                </div>
-
+              <div class="person-label">
+                Birthday
               </div>
 
-              <div class="bottom">
+              <h2>
+                ${escapeHtml(person.name)}
+                ${person.emoji}
+              </h2>
 
-                <span class="pill">
-                  ${
-                    claimingOpen
-                      ? "🎁 Claiming is open"
-                      : "Wishlist open"
-                  }
-                </span>
-
-                <button
-                  class="btn secondary"
-                  onclick="openPerson('${person.id}')"
-                >
-                  View wishlist
-                </button>
-
+              <div class="person-birthday">
+                ${escapeHtml(person.birthday)}
               </div>
 
-            </article>
-          `;
-        }).join("")}
+            </div>
+
+
+            <div class="person-bottom">
+
+              <span class="pill">
+                Wishlist open
+              </span>
+
+              <button
+                class="btn secondary"
+                onclick="openPerson('${person.id}')"
+              >
+                View wishlist
+              </button>
+
+            </div>
+
+          </article>
+
+        `).join("")}
 
       </section>
 
+
       <footer>
-        Four people. A decade of birthdays. Hopefully
-        slightly fewer “what do you want?” messages. ❤️
+        Made for friends who are tired of
+        pretending they don't want anything.
       </footer>
 
     </main>
+
   `;
 }
 
-window.render = render;
 
-/* =========================================================
-   WISHLIST
-   ========================================================= */
+/* ============================================================
+   LOAD GIFTS
+   ============================================================ */
 
-window.openPerson = async function (personId) {
+async function loadWishlist(personId) {
 
-  const person = PEOPLE.find(
-    (item) => item.id === personId
-  );
+  const {
+    data: gifts,
+    error: giftsError
+  } = await supabase
+    .from("gifts")
+    .select("*")
+    .eq("person_id", personId)
+    .order(
+      "created_at",
+      {
+        ascending: true
+      }
+    );
+
+
+  if (giftsError) {
+
+    console.error(
+      "Gift loading error:",
+      giftsError
+    );
+
+    throw new Error(
+      giftsError.message ||
+      "Could not load this wishlist."
+    );
+  }
+
+
+  if (!gifts?.length) {
+    return [];
+  }
+
+
+  const ids =
+    gifts.map(gift => gift.id);
+
+
+  const {
+    data: claims,
+    error: claimsError
+  } = await supabase
+    .from("gift_claims")
+    .select(
+      "id,gift_id,shopper_id"
+    )
+    .in(
+      "gift_id",
+      ids
+    );
+
+
+  if (claimsError) {
+
+    console.error(
+      "Claim loading error:",
+      claimsError
+    );
+
+    throw new Error(
+      claimsError.message ||
+      "Could not load claim information."
+    );
+  }
+
+
+  return gifts.map(gift => {
+
+    const claim =
+      (claims || []).find(
+        item =>
+          item.gift_id === gift.id
+      ) || null;
+
+
+    return {
+      ...gift,
+      claim
+    };
+
+  });
+
+}
+
+
+/* ============================================================
+   OPEN WISHLIST
+   ============================================================ */
+
+window.openPerson = async function(personId) {
+
+  const person =
+    PEOPLE.find(
+      item =>
+        item.id === personId
+    );
+
 
   if (!person) {
-    render();
     return;
   }
 
-  let items = [];
-
-  if (configured) {
-    items = await loadItems(personId);
-  }
-
-  const claimingOpen =
-    isClaimingOpen(person);
 
   app.innerHTML = `
+
     <main class="shell">
 
-      <button
-        class="btn ghost"
-        onclick="render()"
-      >
-        ← Back
-      </button>
-
-      <header
-        class="hero wishlist-hero"
-      >
-
-        <div>
-
-          <div class="kicker">
-            ${escapeHtml(person.birthday)}
-          </div>
-
-          <h1>
-            ${escapeHtml(person.name)}'s wishlist 🎁
-          </h1>
-
-          <p>
-            ${
-              claimingOpen
-                ? "Gift claiming is currently open."
-                : "Wishlist editing stays open throughout the year. Gift claiming opens 30 days before the birthday."
-            }
-          </p>
-
-        </div>
+      <div class="wishlist-nav">
 
         <button
-          class="btn secondary"
+          class="btn ghost"
+          onclick="renderHome()"
+        >
+          ← Back
+        </button>
+
+
+        <button
+          class="btn"
           onclick="showAdd('${person.id}')"
         >
           + Add gift
         </button>
 
+      </div>
+
+
+      <header class="hero">
+
+        <div class="brand">
+          ${escapeHtml(
+            person.birthday
+          )}
+        </div>
+
+        <h1>
+          ${escapeHtml(person.name)}
+          ${person.emoji}
+        </h1>
+
+        <p>
+          Add or change gifts whenever you want.
+          Claiming is available all year.
+        </p>
+
       </header>
 
-      <section class="items">
 
-        ${
-          items.length
-            ? items.map(itemCard).join("")
-            : `
-              <div class="card empty">
-                <div class="empty-icon">🎁</div>
+      <section
+        id="wishlist"
+        class="gift-grid"
+      >
 
-                <h2>
-                  Nothing here yet
-                </h2>
+        <div class="card empty">
 
-                <p>
-                  Add something you'd genuinely
-                  love to receive.
-                </p>
-              </div>
-            `
-        }
+          <div class="empty-icon">
+            ⏳
+          </div>
+
+          Loading wishlist…
+
+        </div>
 
       </section>
 
     </main>
+
   `;
-};
 
-/* =========================================================
-   LOAD GIFTS
-   ========================================================= */
-
-async function loadItems(personId) {
-
-  const {
-    data,
-    error
-  } = await supabase
-    .from("gifts")
-    .select("*")
-    .eq("person_id", personId)
-    .order("created_at", {
-      ascending: true
-    });
-
-  if (error) {
-    console.error(error);
-
-    alert(
-      "I couldn't load this wishlist. Please refresh the page."
-    );
-
-    return [];
-  }
-
-  const gifts = data || [];
-
-  let claimedIds = new Set();
 
   try {
 
-    const {
-      data: claims,
-      error: claimError
-    } = await supabase
-      .from("gift_claims")
-      .select("gift_id");
-
-    if (!claimError && claims) {
-
-      claimedIds = new Set(
-        claims.map(
-          (claim) => claim.gift_id
-        )
+    const gifts =
+      await loadWishlist(
+        person.id
       );
-    }
 
-  } catch (error) {
-    console.error(error);
-  }
 
-  return gifts.map((gift) => ({
-    ...gift,
-    claimed: claimedIds.has(gift.id)
-  }));
-}
+    const container =
+      document.querySelector(
+        "#wishlist"
+      );
 
-/* =========================================================
-   GIFT CARD
-   ========================================================= */
 
-function itemCard(item) {
+    if (!gifts.length) {
 
-  const image =
-    item.image_url ||
-    "https://placehold.co/900x700/f7efe8/777?text=🎁";
+      container.innerHTML = `
 
-  return `
-    <article class="item card">
-
-      <div class="item-image-wrap">
-
-        <img
-          src="${escapeHtml(image)}"
-          alt="${escapeHtml(item.name || "Gift")}"
-          loading="lazy"
-          onerror="
-            this.onerror=null;
-            this.src='https://placehold.co/900x700/f7efe8/777?text=🎁';
-          "
+        <div
+          class="card empty"
+          style="grid-column:1/-1"
         >
 
+          <div class="empty-icon">
+            🎁
+          </div>
+
+          <h2>
+            Nothing here yet
+          </h2>
+
+          <p>
+            Add the first thing you'd
+            genuinely love to receive.
+          </p>
+
+          <button
+            class="btn"
+            onclick="showAdd('${person.id}')"
+          >
+            + Add first gift
+          </button>
+
+        </div>
+
+      `;
+
+      return;
+    }
+
+
+    container.innerHTML =
+      gifts
+        .map(
+          gift =>
+            renderGiftCard(
+              gift,
+              person
+            )
+        )
+        .join("");
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+
+    const container =
+      document.querySelector(
+        "#wishlist"
+      );
+
+
+    if (container) {
+
+      container.innerHTML = `
+
+        <div
+          class="card empty"
+          style="grid-column:1/-1"
+        >
+
+          <div class="empty-icon">
+            ⚠️
+          </div>
+
+          <h2>
+            Couldn't load this wishlist
+          </h2>
+
+          <p>
+            ${escapeHtml(
+              error.message
+            )}
+          </p>
+
+          <button
+            class="btn"
+            onclick="openPerson('${person.id}')"
+          >
+            Try again
+          </button>
+
+        </div>
+
+      `;
+
+    }
+
+  }
+
+};
+
+
+/* ============================================================
+   GIFT CARD
+   ============================================================ */
+
+function renderGiftCard(
+  gift,
+  owner
+) {
+
+  const image =
+    gift.image_url &&
+    String(gift.image_url).trim();
+
+
+  const imageHtml = image
+
+    ? `
+
+      <img
+        class="gift-image"
+        src="${escapeHtml(
+          image
+        )}"
+        alt="${escapeHtml(
+          gift.name
+        )}"
+        loading="lazy"
+        onerror="
+          this.style.display='none';
+          this.nextElementSibling.style.display='flex';
+        "
+      >
+
+      <div
+        class="gift-placeholder"
+        style="display:none"
+      >
+        🎁
       </div>
 
-      <div class="itembody">
+    `
 
-        <h3>
-          ${escapeHtml(item.name)}
+    : `
+
+      <div class="gift-placeholder">
+        🎁
+      </div>
+
+    `;
+
+
+  const claimed =
+    Boolean(gift.claim);
+
+
+  return `
+
+    <article class="gift card">
+
+      ${imageHtml}
+
+
+      <div class="gift-body">
+
+        <h3 class="gift-title">
+
+          ${escapeHtml(
+            gift.name
+          )}
+
         </h3>
 
+
         ${
-          item.notes
+          gift.notes
             ? `
-              <div class="meta">
-                ${escapeHtml(item.notes)}
+              <div class="gift-notes">
+                ${escapeHtml(
+                  gift.notes
+                )}
               </div>
             `
             : ""
         }
 
-        <div class="actions">
+
+        <div class="gift-actions">
 
           ${
-            item.url
+            gift.url
               ? `
                 <a
                   class="btn secondary"
-                  href="${escapeHtml(item.url)}"
+                  href="${escapeHtml(
+                    gift.url
+                  )}"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -499,20 +1666,25 @@ function itemCard(item) {
               : ""
           }
 
+
           ${
-            item.claimed
+            claimed
               ? `
-                <button
-                  class="btn secondary"
-                  disabled
-                >
+                <span class="claimed">
                   ✓ Claimed
+                </span>
+
+                <button
+                  class="btn danger"
+                  onclick="unclaimItem('${gift.id}')"
+                >
+                  Undo claim
                 </button>
               `
               : `
                 <button
                   class="btn"
-                  onclick="claimItem('${item.id}')"
+                  onclick="claimItem('${gift.id}')"
                 >
                   🎁 Claim
                 </button>
@@ -524,215 +1696,145 @@ function itemCard(item) {
       </div>
 
     </article>
+
   `;
+
 }
 
-/* =========================================================
-   IMAGE COMPRESSION
-   ========================================================= */
 
-function compressImage(file) {
-
-  return new Promise((resolve, reject) => {
-
-    if (!file) {
-      resolve(null);
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-      reject(
-        new Error("Please choose an image file.")
-      );
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-
-      const image = new Image();
-
-      image.onload = () => {
-
-        const maxSize = 1000;
-
-        let width = image.width;
-        let height = image.height;
-
-        if (width > maxSize || height > maxSize) {
-
-          if (width > height) {
-            height =
-              Math.round(
-                height * maxSize / width
-              );
-
-            width = maxSize;
-
-          } else {
-
-            width =
-              Math.round(
-                width * maxSize / height
-              );
-
-            height = maxSize;
-          }
-        }
-
-        const canvas =
-          document.createElement("canvas");
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const context =
-          canvas.getContext("2d");
-
-        context.drawImage(
-          image,
-          0,
-          0,
-          width,
-          height
-        );
-
-        /*
-          JPEG compression keeps the database payload
-          much smaller than the original phone photo.
-        */
-
-        const compressed =
-          canvas.toDataURL(
-            "image/jpeg",
-            0.78
-          );
-
-        resolve(compressed);
-      };
-
-      image.onerror = () => {
-        reject(
-          new Error(
-            "The selected image could not be read."
-          )
-        );
-      };
-
-      image.src = event.target.result;
-    };
-
-    reader.onerror = () => {
-      reject(
-        new Error(
-          "The selected image could not be read."
-        )
-      );
-    };
-
-    reader.readAsDataURL(file);
-  });
-}
-
-/* =========================================================
+/* ============================================================
    ADD GIFT
-   ========================================================= */
+   ============================================================ */
 
-window.showAdd = function (personId) {
+window.showAdd = function(personId) {
+
+  const person =
+    PEOPLE.find(
+      item =>
+        item.id === personId
+    );
+
+
+  if (!person) {
+    return;
+  }
+
+
+  closeModal();
+
 
   app.insertAdjacentHTML(
     "beforeend",
     `
+
       <div
         class="modal"
         id="modal"
       >
 
-        <div class="modalbox card">
+        <div
+          class="modal-box card"
+        >
 
           <button
-            class="btn ghost"
-            style="float:right"
+            class="btn ghost modal-close"
             onclick="closeModal()"
           >
             Close
           </button>
 
+
           <h2>
             Add a gift 🎁
           </h2>
 
+
           <p>
-            Add something you'd genuinely be
-            happy to receive.
+            Add something you'd genuinely
+            be happy to receive.
           </p>
 
-          <label>
-            Item name
+
+          <label
+            class="field-label"
+            for="gift-name"
+          >
+            What do you want?
           </label>
 
           <input
-            id="gname"
+            id="gift-name"
+            class="field"
+            type="text"
             placeholder="e.g. Sony headphones"
             autocomplete="off"
           >
 
-          <label>
+
+          <label
+            class="field-label"
+            for="gift-url"
+          >
             Shopping link
           </label>
 
           <input
-            id="gurl"
+            id="gift-url"
+            class="field"
+            type="url"
             placeholder="https://..."
-            inputmode="url"
             autocomplete="off"
           >
 
-          <label>
-            Picture
-          </label>
 
-          <div class="upload-box">
-
-            <input
-              id="gimage"
-              type="file"
-              accept="image/*"
-              onchange="previewGiftImage(event)"
-            >
-
-            <div
-              id="image-preview"
-              class="image-preview"
-            >
-              📷
-              <span>
-                Tap to choose a picture
-              </span>
-            </div>
-
-          </div>
-
-          <label>
-            Notes
+          <label
+            class="field-label"
+            for="gift-image"
+          >
+            Picture URL
+            <span style="font-weight:500;color:#8791a2">
+              (optional)
+            </span>
           </label>
 
           <input
-            id="gnote"
-            placeholder="Size, colour, exact version, etc."
+            id="gift-image"
+            class="field"
+            type="url"
+            placeholder="Optional image URL"
+            autocomplete="off"
           >
 
+
+          <label
+            class="field-label"
+            for="gift-notes"
+          >
+            Notes
+            <span style="font-weight:500;color:#8791a2">
+              (optional)
+            </span>
+          </label>
+
+          <textarea
+            id="gift-notes"
+            class="field"
+            placeholder="Colour, size, exact version, etc."
+          ></textarea>
+
+
           <div class="notice">
-            ✨ Your wishlist can be edited throughout
-            the year.
+
+            💡 You can add gifts anytime.
+            Claiming is available throughout
+            the entire year.
+
           </div>
 
+
           <button
-            id="save-gift-button"
-            class="btn"
-            style="width:100%;margin-top:12px"
-            onclick="saveGift('${personId}')"
+            class="btn modal-submit"
+            onclick="saveGift('${person.id}')"
           >
             Add to wishlist
           </button>
@@ -740,501 +1842,361 @@ window.showAdd = function (personId) {
         </div>
 
       </div>
+
     `
   );
+
 };
 
-/* =========================================================
-   IMAGE PREVIEW
-   ========================================================= */
 
-window.previewGiftImage = function (event) {
+/* ============================================================
+   CLOSE MODAL
+   ============================================================ */
 
-  const file =
-    event.target.files?.[0];
+window.closeModal = function() {
 
-  const preview =
-    document.querySelector(
-      "#image-preview"
-    );
-
-  if (!file || !preview) {
-    return;
-  }
-
-  const reader =
-    new FileReader();
-
-  reader.onload = (e) => {
-
-    preview.innerHTML = `
-      <img
-        src="${e.target.result}"
-        alt="Selected gift"
-      >
-
-      <span>
-        Tap to change picture
-      </span>
-    `;
-  };
-
-  reader.readAsDataURL(file);
-};
-
-window.closeModal = function () {
   document
     .querySelector("#modal")
     ?.remove();
+
 };
 
-/* =========================================================
+
+/* ============================================================
    SAVE GIFT
-   ========================================================= */
+   ============================================================ */
 
-window.saveGift = async function (personId) {
-
-  if (!configured) {
-    alert(
-      "Supabase is not configured yet."
-    );
-    return;
-  }
-
-  const nameInput =
-    document.querySelector("#gname");
-
-  const urlInput =
-    document.querySelector("#gurl");
-
-  const imageInput =
-    document.querySelector("#gimage");
-
-  const noteInput =
-    document.querySelector("#gnote");
-
-  const saveButton =
-    document.querySelector(
-      "#save-gift-button"
-    );
-
-  if (
-    !nameInput ||
-    !urlInput ||
-    !imageInput ||
-    !noteInput
-  ) {
-    alert(
-      "The gift form didn't load correctly. Please refresh the page."
-    );
-    return;
-  }
+window.saveGift = async function(personId) {
 
   const name =
-    nameInput.value.trim();
+    document
+      .querySelector("#gift-name")
+      ?.value
+      .trim();
+
 
   const url =
-    urlInput.value.trim();
+    document
+      .querySelector("#gift-url")
+      ?.value
+      .trim();
+
+
+  const image =
+    document
+      .querySelector("#gift-image")
+      ?.value
+      .trim();
+
 
   const notes =
-    noteInput.value.trim();
+    document
+      .querySelector("#gift-notes")
+      ?.value
+      .trim();
+
 
   if (!name) {
-    alert(
-      "Please enter an item name."
-    );
 
-    nameInput.focus();
+    alert(
+      "Please enter the gift name."
+    );
 
     return;
   }
 
-  if (saveButton) {
-    saveButton.disabled = true;
-    saveButton.textContent =
-      "Adding gift…";
+
+  if (
+    url &&
+    !/^https?:\\/\\//i.test(url)
+  ) {
+
+    alert(
+      "The shopping link should start with https://"
+    );
+
+    return;
   }
 
-  try {
 
-    let imageUrl = null;
+  if (
+    image &&
+    !/^https?:\\/\\//i.test(image)
+  ) {
 
-    const file =
-      imageInput.files?.[0];
+    alert(
+      "The image link should start with https://"
+    );
 
-    if (file) {
+    return;
+  }
 
-      imageUrl =
-        await compressImage(file);
 
-      /*
-        Extremely large compressed images can still be
-        problematic for database rows.
-      */
+  const button =
+    document.querySelector(
+      "#modal .modal-submit"
+    );
 
-      if (
-        imageUrl &&
-        imageUrl.length > 1200000
-      ) {
-        alert(
-          "That picture is still too large. Please choose a smaller photo."
-        );
 
-        if (saveButton) {
-          saveButton.disabled = false;
-          saveButton.textContent =
-            "Add to wishlist";
-        }
+  if (button) {
 
-        return;
-      }
-    }
+    button.disabled = true;
 
-    const gift = {
-      person_id: personId,
-      name: name,
-      image_url: imageUrl,
-      url: url || null,
-      notes: notes || null
-    };
+    button.textContent =
+      "Adding…";
 
-    const {
-      error
-    } = await supabase
+  }
+
+
+  const gift = {
+
+    person_id:
+      personId,
+
+    name:
+      name,
+
+    url:
+      url || null,
+
+    image_url:
+      image || null,
+
+    notes:
+      notes || null
+
+  };
+
+
+  const {
+    error
+  } =
+    await supabase
       .from("gifts")
       .insert(gift);
 
-    if (error) {
 
-      console.error(
-        "Gift insert error:",
-        error
-      );
+  if (error) {
 
-      alert(
-        "Couldn't add this gift.\n\n" +
-        error.message
-      );
-
-      return;
-    }
-
-    closeModal();
-
-    await openPerson(personId);
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      error.message ||
-      "Something went wrong while adding the gift."
+    console.error(
+      "Gift insert error:",
+      error
     );
 
-  } finally {
 
-    if (saveButton) {
-      saveButton.disabled = false;
-      saveButton.textContent =
+    if (button) {
+
+      button.disabled = false;
+
+      button.textContent =
         "Add to wishlist";
+
     }
-  }
-};
 
-/* =========================================================
-   CLAIM
-   ========================================================= */
-
-window.claimItem = async function (giftId) {
-
-  if (!configured) {
-    alert(
-      "Supabase is not configured yet."
-    );
-    return;
-  }
-
-  const {
-    data: gift,
-    error
-  } = await supabase
-    .from("gifts")
-    .select("id, person_id, name")
-    .eq("id", giftId)
-    .single();
-
-  if (error || !gift) {
-    alert(
-      "This gift could not be found. Please refresh the wishlist."
-    );
-    return;
-  }
-
-  const owner =
-    PEOPLE.find(
-      (person) =>
-        person.id === gift.person_id
-    );
-
-  if (!owner) {
-    alert(
-      "This gift belongs to an unknown wishlist."
-    );
-    return;
-  }
-
-  if (!isClaimingOpen(owner)) {
-    alert(
-      `Gift claiming isn't open for ${owner.name}'s birthday yet.`
-    );
-    return;
-  }
-
-  const {
-    data: existingClaim
-  } = await supabase
-    .from("gift_claims")
-    .select("gift_id")
-    .eq("gift_id", giftId)
-    .maybeSingle();
-
-  if (existingClaim) {
 
     alert(
-      "That gift has already been claimed. 🎁"
-    );
-
-    await openPerson(
-      gift.person_id
+      "Couldn't add the gift.\n\n" +
+      error.message
     );
 
     return;
   }
 
-  showShopperLogin(
-    giftId,
-    gift.person_id
+
+  closeModal();
+
+  await openPerson(
+    personId
   );
+
 };
 
-/* =========================================================
-   SHOPPER LOGIN
-   ========================================================= */
 
-function showShopperLogin(
-  giftId,
-  ownerId
-) {
+/* ============================================================
+   CLAIM
+   ============================================================ */
+
+window.claimItem = async function(giftId) {
+
+  closeModal();
+
 
   app.insertAdjacentHTML(
     "beforeend",
     `
+
       <div
         class="modal"
         id="modal"
       >
 
-        <div class="modalbox card">
+        <div
+          class="modal-box card"
+        >
 
           <button
-            class="btn ghost"
-            style="float:right"
+            class="btn ghost modal-close"
             onclick="closeModal()"
           >
             Close
           </button>
 
+
           <h2>
-            Who's shopping? 🛍️
+            Claim this gift 🎁
           </h2>
 
+
           <p>
-            Choose your name and enter your PIN/password.
-            The birthday person will not be shown who claimed
-            the gift.
+            Choose your name and enter
+            your PIN/password.
           </p>
 
-          <label>
+
+          <label
+            class="field-label"
+            for="shopper"
+          >
             Your name
           </label>
 
           <select
             id="shopper"
-            style="
-              width:100%;
-              padding:13px;
-              border:1px solid var(--line);
-              border-radius:13px;
-              background:white;
-            "
+            class="field"
           >
 
-            ${PEOPLE.map((person) => `
-              <option
-                value="${person.id}"
-                ${person.id === ownerId ? "disabled" : ""}
-              >
-                ${escapeHtml(person.name)}
-                ${
-                  person.id === ownerId
-                    ? " — birthday person"
-                    : ""
-                }
-              </option>
-            `).join("")}
+            ${PEOPLE.map(
+              person =>
+                `
+                  <option
+                    value="${person.id}"
+                  >
+                    ${escapeHtml(
+                      person.name
+                    )}
+                  </option>
+                `
+            ).join("")}
 
           </select>
 
-          <label>
+
+          <label
+            class="field-label"
+            for="claim-password"
+          >
             PIN / password
           </label>
 
           <input
-            id="pass"
+            id="claim-password"
+            class="field"
             type="password"
             inputmode="numeric"
-            placeholder="Enter your PIN or password"
             autocomplete="current-password"
+            placeholder="Enter your PIN/password"
           >
+
+
+          <div class="notice">
+
+            🔒 The birthday person will
+            not be told who claimed it.
+
+          </div>
+
 
           <button
-            class="btn"
-            style="width:100%;margin-top:12px"
+            id="claim-submit"
+            class="btn modal-submit"
             onclick="doClaim('${giftId}')"
           >
-            Claim this gift 🎁
+            Claim this gift
           </button>
-
-          <div
-            class="notice"
-            style="margin-top:12px"
-          >
-            🔒 Your claim stays hidden from the
-            birthday person.
-          </div>
 
         </div>
 
       </div>
+
     `
   );
 
-  setTimeout(() => {
-    document
-      .querySelector("#pass")
-      ?.focus();
-  }, 50);
-}
+};
 
-/* =========================================================
+
+/* ============================================================
    DO CLAIM
-   ========================================================= */
+   ============================================================ */
 
-window.doClaim = async function (giftId) {
-
-  const shopperElement =
-    document.querySelector("#shopper");
-
-  const passwordElement =
-    document.querySelector("#pass");
-
-  if (
-    !shopperElement ||
-    !passwordElement
-  ) {
-    alert(
-      "The claim form could not be loaded. Please refresh the page."
-    );
-    return;
-  }
+window.doClaim = async function(giftId) {
 
   const shopperId =
-    shopperElement.value;
+    document
+      .querySelector("#shopper")
+      ?.value;
+
 
   const password =
-    passwordElement.value;
+    document
+      .querySelector("#claim-password")
+      ?.value;
 
-  if (!password) {
+
+  if (!shopperId || !password) {
+
     alert(
-      "Please enter your PIN/password."
+      "Please enter your name and PIN/password."
     );
-
-    passwordElement.focus();
 
     return;
   }
 
-  const shopper =
-    PEOPLE.find(
-      (person) =>
-        person.id === shopperId
+
+  const email =
+    AUTH_EMAILS[
+      shopperId
+    ];
+
+
+  if (!email) {
+
+    alert(
+      "That account could not be found."
     );
 
-  if (!shopper) {
-    alert(
-      "Please choose your name."
-    );
     return;
   }
 
-  const {
-    data: gift,
-    error: giftError
-  } = await supabase
-    .from("gifts")
-    .select("id, person_id, name")
-    .eq("id", giftId)
-    .single();
 
-  if (giftError || !gift) {
-    alert(
-      "That gift could not be found. Please refresh the wishlist."
+  const button =
+    document.querySelector(
+      "#claim-submit"
     );
-    return;
+
+
+  if (button) {
+
+    button.disabled = true;
+
+    button.textContent =
+      "Checking…";
+
   }
 
-  if (
-    gift.person_id === shopperId
-  ) {
-    alert(
-      "You can't claim your own birthday gift. ❤️"
-    );
-    return;
-  }
-
-  const owner =
-    PEOPLE.find(
-      (person) =>
-        person.id === gift.person_id
-    );
-
-  if (!owner) {
-    alert(
-      "This gift belongs to an unknown wishlist."
-    );
-    return;
-  }
-
-  if (!isClaimingOpen(owner)) {
-    alert(
-      "Gift claiming isn't open for this birthday yet."
-    );
-    return;
-  }
 
   /*
-     Sign in using the selected friend's Supabase
-     account.
+    SIGN IN
   */
 
   const {
     data: authData,
     error: authError
-  } = await supabase.auth.signInWithPassword({
-    email: shopper.email,
-    password: password
-  });
+  } =
+    await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
 
   if (
     authError ||
@@ -1246,368 +2208,374 @@ window.doClaim = async function (giftId) {
       authError
     );
 
+
+    if (button) {
+
+      button.disabled = false;
+
+      button.textContent =
+        "Claim this gift";
+
+    }
+
+
     alert(
-      "The PIN/password didn't work.\n\n" +
-      "Please check the name and PIN/password and try again."
+      "That PIN/password didn't work."
     );
 
     return;
   }
 
+
   /*
-     Check again immediately before inserting the claim.
+    FIND GIFT
   */
 
   const {
-    data: alreadyClaimed
-  } = await supabase
-    .from("gift_claims")
-    .select("gift_id")
-    .eq("gift_id", giftId)
-    .maybeSingle();
+    data: gift,
+    error: giftError
+  } =
+    await supabase
+      .from("gifts")
+      .select(
+        "id,person_id"
+      )
+      .eq(
+        "id",
+        giftId
+      )
+      .single();
 
-  if (alreadyClaimed) {
 
-    alert(
-      "That gift has already been claimed. 🎁"
+  if (
+    giftError ||
+    !gift
+  ) {
+
+    console.error(
+      giftError
     );
 
-    closeModal();
+
+    alert(
+      "Couldn't find this gift."
+    );
+
+    return;
+  }
+
+
+  /*
+    DON'T ALLOW A PERSON TO
+    CLAIM THEIR OWN GIFTS
+  */
+
+  if (
+    gift.person_id === shopperId
+  ) {
+
+    alert(
+      "You can't claim your own birthday gifts."
+    );
+
+    return;
+  }
+
+
+  /*
+    CHECK EXISTING CLAIM
+  */
+
+  const {
+    data: existingClaim,
+    error: existingError
+  } =
+    await supabase
+      .from("gift_claims")
+      .select("id")
+      .eq(
+        "gift_id",
+        giftId
+      )
+      .maybeSingle();
+
+
+  if (existingError) {
+
+    console.error(
+      existingError
+    );
+
+
+    alert(
+      "Couldn't check the claim status.\n\n" +
+      existingError.message
+    );
+
+    return;
+  }
+
+
+  if (existingClaim) {
+
+    alert(
+      "That gift has already been claimed."
+    );
+
+    return;
+  }
+
+
+  /*
+    CLAIM — NO DATE RESTRICTION.
+    THIS WORKS ALL YEAR.
+  */
+
+  const {
+    error: insertError
+  } =
+    await supabase
+      .from("gift_claims")
+      .insert({
+
+        gift_id:
+          giftId,
+
+        shopper_id:
+          authData.user.id
+
+      });
+
+
+  if (insertError) {
+
+    console.error(
+      "Claim error:",
+      insertError
+    );
+
+
+    if (
+      insertError.code ===
+      "23505"
+    ) {
+
+      alert(
+        "That gift has already been claimed."
+      );
+
+    } else {
+
+      alert(
+        "Couldn't claim this gift.\n\n" +
+        insertError.message
+      );
+
+    }
+
+    return;
+  }
+
+
+  closeModal();
+
+
+  alert(
+    "🎁 Gift claimed!\n\n" +
+    "The birthday person won't be shown who claimed it."
+  );
+
+
+  await openPerson(
+    gift.person_id
+  );
+
+};
+
+
+/* ============================================================
+   UNCLAIM
+   ============================================================ */
+
+window.unclaimItem = async function(giftId) {
+
+  /*
+    Get the currently signed-in person.
+  */
+
+  const {
+    data: {
+      user
+    }
+  } =
+    await supabase.auth.getUser();
+
+
+  if (!user) {
+
+    /*
+      If the session disappeared,
+      ask them to sign in again.
+    */
+
+    alert(
+      "Please claim the gift again after signing in."
+    );
+
+    return;
+  }
+
+
+  /*
+    Find the claim belonging to
+    THIS signed-in user.
+  */
+
+  const {
+    data: ownClaim,
+    error: ownClaimError
+  } =
+    await supabase
+      .from("gift_claims")
+      .select(
+        "id,gift_id,shopper_id"
+      )
+      .eq(
+        "gift_id",
+        giftId
+      )
+      .eq(
+        "shopper_id",
+        user.id
+      )
+      .maybeSingle();
+
+
+  if (ownClaimError) {
+
+    console.error(
+      ownClaimError
+    );
+
+
+    alert(
+      "Couldn't check your claim.\n\n" +
+      ownClaimError.message
+    );
+
+    return;
+  }
+
+
+  /*
+    Someone else claimed it.
+    Do NOT allow this person to
+    remove somebody else's claim.
+  */
+
+  if (!ownClaim) {
+
+    alert(
+      "You can only undo your own claim."
+    );
+
+    return;
+  }
+
+
+  const confirmed =
+    confirm(
+      "Undo your claim?\n\n" +
+      "The gift will become available for someone else."
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  /*
+    DELETE ONLY THIS USER'S CLAIM.
+  */
+
+  const {
+    error: deleteError
+  } =
+    await supabase
+      .from("gift_claims")
+      .delete()
+      .eq(
+        "id",
+        ownClaim.id
+      )
+      .eq(
+        "shopper_id",
+        user.id
+      );
+
+
+  if (deleteError) {
+
+    console.error(
+      "Unclaim error:",
+      deleteError
+    );
+
+
+    alert(
+      "Couldn't undo the claim.\n\n" +
+      deleteError.message
+    );
+
+    return;
+  }
+
+
+  /*
+    Find owner and reload.
+  */
+
+  const {
+    data: gift
+  } =
+    await supabase
+      .from("gifts")
+      .select(
+        "person_id"
+      )
+      .eq(
+        "id",
+        giftId
+      )
+      .single();
+
+
+  alert(
+    "Claim removed. 🎁\n\n" +
+    "The gift is available again."
+  );
+
+
+  if (gift?.person_id) {
 
     await openPerson(
       gift.person_id
     );
 
-    return;
+  } else {
+
+    renderHome();
+
   }
 
-  /*
-     Save claim.
-  */
-
-  const {
-    error: insertError
-  } = await supabase
-    .from("gift_claims")
-    .insert({
-      gift_id: giftId,
-      shopper_id: authData.user.id
-    });
-
-  if (insertError) {
-
-    console.error(
-      "Claim insert error:",
-      insertError
-    );
-
-    if (
-      insertError.code === "23505"
-    ) {
-
-      alert(
-        "That gift has already been claimed. 🎁"
-      );
-
-      closeModal();
-
-      await openPerson(
-        gift.person_id
-      );
-
-      return;
-    }
-
-    alert(
-      "The gift couldn't be claimed.\n\n" +
-      insertError.message
-    );
-
-    return;
-  }
-
-  closeModal();
-
-  alert(
-    "🎉 Claimed!\n\nThe birthday person won't be shown who claimed it."
-  );
-
-  await openPerson(
-    gift.person_id
-  );
 };
 
-/* =========================================================
-   VISUAL UPGRADE
-   ========================================================= */
 
-const visualUpgrade = document.createElement("style");
-
-visualUpgrade.textContent = `
-
-  :root {
-    --birthday-pink: #f3d7df;
-    --birthday-peach: #f5dfca;
-    --birthday-yellow: #f5e8b7;
-    --birthday-lilac: #ddd7ee;
-    --birthday-green: #dce8d9;
-    --ink: #27231f;
-  }
-
-  body {
-    background:
-      radial-gradient(
-        circle at 10% 5%,
-        rgba(243,215,223,.75),
-        transparent 27%
-      ),
-      radial-gradient(
-        circle at 90% 10%,
-        rgba(245,232,183,.65),
-        transparent 25%
-      ),
-      #faf8f5;
-  }
-
-  .hero {
-    position: relative;
-  }
-
-  .hero::after {
-    content: "✦  ✨  🎂  ✦";
-    display: block;
-    margin-top: 16px;
-    font-size: 18px;
-    letter-spacing: 8px;
-    opacity: .65;
-  }
-
-  .next {
-    background:
-      linear-gradient(
-        135deg,
-        rgba(243,215,223,.75),
-        rgba(245,232,183,.65)
-      );
-    border-color: rgba(150,120,100,.15);
-  }
-
-  .person {
-    background:
-      linear-gradient(
-        145deg,
-        rgba(255,255,255,.98),
-        rgba(250,240,235,.92)
-      );
-  }
-
-  .person:nth-child(2) {
-    background:
-      linear-gradient(
-        145deg,
-        rgba(255,255,255,.98),
-        rgba(238,234,247,.9)
-      );
-  }
-
-  .person:nth-child(3) {
-    background:
-      linear-gradient(
-        145deg,
-        rgba(255,255,255,.98),
-        rgba(237,245,233,.9)
-      );
-  }
-
-  .person:nth-child(4) {
-    background:
-      linear-gradient(
-        145deg,
-        rgba(255,255,255,.98),
-        rgba(247,237,221,.9)
-      );
-  }
-
-  .person-top {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-  }
-
-  .avatar {
-    width: 54px;
-    height: 54px;
-    min-width: 54px;
-    display: grid;
-    place-items: center;
-    border-radius: 18px;
-    background:
-      linear-gradient(
-        135deg,
-        var(--birthday-pink),
-        var(--birthday-peach)
-      );
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--ink);
-    box-shadow:
-      0 7px 18px rgba(80,60,50,.10);
-  }
-
-  .person:nth-child(2) .avatar {
-    background:
-      linear-gradient(
-        135deg,
-        var(--birthday-lilac),
-        #eee9f5
-      );
-  }
-
-  .person:nth-child(3) .avatar {
-    background:
-      linear-gradient(
-        135deg,
-        var(--birthday-green),
-        #edf4e9
-      );
-  }
-
-  .person:nth-child(4) .avatar {
-    background:
-      linear-gradient(
-        135deg,
-        var(--birthday-yellow),
-        var(--birthday-peach)
-      );
-  }
-
-  .item {
-    overflow: hidden;
-    border: 1px solid rgba(120,100,80,.12);
-  }
-
-  .item-image-wrap {
-    background:
-      linear-gradient(
-        135deg,
-        #f5e9e1,
-        #eee9f3
-      );
-  }
-
-  .item-image-wrap img {
-    display: block;
-    width: 100%;
-    aspect-ratio: 1.25;
-    object-fit: cover;
-  }
-
-  .empty {
-    text-align: center;
-    padding: 45px 25px;
-  }
-
-  .empty-icon {
-    font-size: 42px;
-    margin-bottom: 10px;
-  }
-
-  .test-banner {
-    margin: 0 0 18px;
-    padding: 12px 16px;
-    border-radius: 14px;
-    background: #fff2cc;
-    border: 1px solid #ead79b;
-    color: #66551f;
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .upload-box {
-    position: relative;
-    margin-bottom: 14px;
-  }
-
-  .upload-box input[type="file"] {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 2;
-  }
-
-  .image-preview {
-    min-height: 120px;
-    border: 1.5px dashed #cdbeb2;
-    border-radius: 16px;
-    background:
-      linear-gradient(
-        135deg,
-        #fbf3ee,
-        #f5f1f7
-      );
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    color: #75685f;
-    font-size: 25px;
-  }
-
-  .image-preview span {
-    font-size: 13px;
-  }
-
-  .image-preview img {
-    width: 100%;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 14px;
-  }
-
-  .btn {
-    transition:
-      transform .15s ease,
-      box-shadow .15s ease;
-  }
-
-  .btn:hover {
-    transform: translateY(-1px);
-  }
-
-  .pill {
-    background: rgba(255,255,255,.72);
-  }
-
-  .notice {
-    background:
-      linear-gradient(
-        135deg,
-        rgba(243,215,223,.5),
-        rgba(221,215,238,.4)
-      );
-  }
-
-  .modalbox {
-    box-shadow:
-      0 24px 70px rgba(45,35,30,.20);
-  }
-
-  footer {
-    opacity: .72;
-  }
-
-`;
-
-document.head.appendChild(
-  visualUpgrade
-);
-
-/* =========================================================
+/* ============================================================
    START
-   ========================================================= */
+   ============================================================ */
 
-render();
+installStyles();
+
+renderHome();
