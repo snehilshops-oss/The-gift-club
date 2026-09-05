@@ -1356,7 +1356,6 @@ window.logout = async function() {
 
   await supabase.auth.signOut();
 
-  renderLogin();
 
 };
 
@@ -1423,14 +1422,6 @@ async function renderHome() {
   const user =
     await getCurrentUser();
 
-
-  if (!user) {
-
-    renderLogin();
-
-    return;
-
-  }
 
 
   const active =
@@ -1705,13 +1696,6 @@ async function(personId) {
     await getCurrentUser();
 
 
-  if (!user) {
-
-    renderLogin();
-
-    return;
-
-  }
 
 
   const person =
@@ -2283,17 +2267,6 @@ async function(personId) {
     await getCurrentUser();
 
 
-  if (!user) {
-
-    closeModal();
-
-    renderLogin();
-
-    return;
-
-  }
-
-
   const name =
     document
       .querySelector("#gift-name")
@@ -2449,14 +2422,6 @@ async function(giftId) {
   const user =
     await getCurrentUser();
 
-
-  if (!user) {
-
-    renderLogin();
-
-    return;
-
-  }
 
 
   /*
@@ -2647,15 +2612,6 @@ async function(giftId) {
 
   const user =
     await getCurrentUser();
-
-
-  if (!user) {
-
-    renderLogin();
-
-    return;
-
-  }
 
 
   const confirmed =
