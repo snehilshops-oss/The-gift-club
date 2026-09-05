@@ -2977,4 +2977,6 @@ async function(giftId) {
 
 installStyles();
 
-renderHome();
+getCurrentUser().then(() => {
+  renderHome();
+});
